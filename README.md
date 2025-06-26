@@ -1,24 +1,47 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# Harbor PH Development Documentation
 
-First, run the development server:
+## Project Setup
+
+- **Created with:**
+  ```bash
+  npx create-next-app@latest . --ts --tailwind --eslint --src-dir --app --import-alias "@/*" --use-npm --no-interactive
+  ```
+- **Installed dependencies:**
+  - Prisma: `npm install prisma @prisma/client`
+  - Tailwind CSS (via Next.js setup)
+- **Font:**
+  - Using Roboto Flex (variable font) via `next/font/google`.
+
+## Development Log
+
+- **[2025-06-26]** Initialized project and installed dependencies.
+- **[2025-06-26]** Switched default font to Roboto Flex for variable font support.
+- **[2025-06-26]** Fixed 500 error by ensuring font variable is defined in `layout.tsx`.
+- **[2025-06-26]** Updated all font-related classes in `page.tsx` to use Roboto Flex.
+
+## Running the Project
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Local: http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Troubleshooting
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **500 Internal Server Error:**  
+  Make sure the font variable is defined in `layout.tsx` and used consistently in your CSS and components.
+- **'next' is not recognized:**  
+  Use `npm run dev` instead of `next dev` directly.
+
+## Notes
+
+- To change the default font, update the import and variable in `src/app/layout.tsx` and `src/app/globals.css`.
+- Use `font-[family-name:var(--font-roboto-flex)]` in Tailwind classes for Roboto Flex.
+- For new features or fixes, add an entry to the Development Log above.
 
 ## Learn More
 
