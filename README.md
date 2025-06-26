@@ -1,6 +1,6 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-# Harbor.ph Development Documentation
+# Harbor PH Development Documentation
 
 ## Project Setup
 
@@ -16,10 +16,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Development Log
 
-- **[2025-06-26]** Initialized project and installed dependencies.
-- **[2025-06-26]** Switched default font to Roboto Flex for variable font support.
-- **[2025-06-26]** Fixed 500 error by ensuring font variable is defined in `layout.tsx`.
-- **[2025-06-26]** Updated all font-related classes in `page.tsx` to use Roboto Flex.
+See [`docs/dev-log.md`](docs/dev-log.md) for the full development log.
 
 ## Running the Project
 
