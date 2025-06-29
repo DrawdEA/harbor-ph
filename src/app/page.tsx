@@ -14,7 +14,6 @@ export default function Home() {
           date="July 10 - 12"
           time="10:00 AM - 8:00 PM"
           detailsUrl="/events/artisan-market"
-          detailsText="See Details"
         />
         <EventCard
           imageSrc="https://placehold.co/600x315/219ebc/fff/png"
@@ -26,7 +25,6 @@ export default function Home() {
           date="August 5 - 7"
           time="11:00 AM - 10:00 PM"
           detailsUrl="/events/food-fest"
-          detailsText="More Info"
         />
         <EventCard
           imageSrc="https://placehold.co/600x315/8ecae6/023047/png"
@@ -38,7 +36,6 @@ export default function Home() {
           date="September 1 - 3"
           time="9:00 AM - 6:00 PM"
           detailsUrl="/events/book-fair"
-          detailsText="Details"
         />
         <EventCard
           imageSrc="https://placehold.co/600x315/ff006e/fff/png"
@@ -50,7 +47,6 @@ export default function Home() {
           date="October 15"
           time="7:00 PM - 12:00 AM"
           detailsUrl="/events/music-night"
-          detailsText="See More"
         />
         <EventCard
           imageSrc="https://placehold.co/600x315/8338ec/fff/png"
@@ -62,7 +58,6 @@ export default function Home() {
           date="November 20 - 22"
           time="10:00 AM - 5:00 PM"
           detailsUrl="/events/tech-expo"
-          detailsText="Explore"
         />
         <EventCard
           imageSrc="https://placehold.co/600x315/3a86ff/fff/png"
@@ -74,7 +69,6 @@ export default function Home() {
           date="December 3"
           time="5:00 AM - 11:00 AM"
           detailsUrl="/events/charity-run"
-          detailsText="Join Now"
         />
       </div>
     </div>
