@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Raleway, Roboto } from "next/font/google";
 import "./globals.css";
-import { Header } from "../components/layout/Header";
 
 const roboto = Roboto({
   variable: "--font-roboto",
@@ -36,9 +35,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${raleway.variable} ${roboto.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${raleway.variable} ${roboto.variable} antialiased min-h-screen flex flex-col`}
       >
-        <Header />
         {children}
       </body>
     </html>

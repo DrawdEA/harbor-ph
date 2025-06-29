@@ -26,7 +26,7 @@ export function EventCard({
   detailsUrl = "#",
 }: EventCardProps) {
   return (
-    <Card className="font-roboto w-full rounded-md border-2 border-foreground bg-background p-0 overflow-hidden flex flex-col">
+    <Card className="font-roboto w-full rounded-md border border-muted shadow-sm bg-background p-0 overflow-hidden flex flex-col">
       <div className="relative w-full aspect-[16/7] -mb-3">
         <Image
           src={imageSrc}
