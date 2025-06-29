@@ -6,8 +6,8 @@
 - `/register`  
   Registration flow entry point.
     - `/register/account-type` – Choose between user or organization account.
-    - `/register/user` – User registration steps.
-    - `/register/organization` – Organization registration steps.
+    - `/register/user` – User registration step.
+    - `/register/organization` – Organization registration step.
     - `/register/verify` – Email/code verification.
     - `/register/welcome` – Welcome/confirmation after registration.
 
@@ -20,10 +20,6 @@
         - `/rules` – Event rules.
         - `/success` – Registration success/confirmation.
         - `/tickets` – Ticket selection.
-
-### **Explore**
-- `/explore`  
-  Browse and filter all public events.
 
 ### **Organization Management**
 - `/organizations/[orgname]`  
@@ -66,7 +62,7 @@
 ## Access Control
 
 - **Public routes:**  
-  `/explore`, `/event/[eventId]`, `/users/[username]`, `/organizations/[orgname]`
+  `/`, `/event/[eventId]`, `/users/[username]`, `/organizations/[orgname]`
 - **Protected routes:**  
   Organization event management (`/organizations/[orgname]/events/[eventId]/edit`, `/analytics`, `/guest`) should be protected so only authorized org members can access.
 
