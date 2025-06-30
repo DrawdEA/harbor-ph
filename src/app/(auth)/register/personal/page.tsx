@@ -66,6 +66,8 @@ export default function Personal() {
 		if (error) {
 			console.error("Error registration: ", error.message);
 			return;
+		} else {
+			console.log("Registered User");
 		}
 	}
 
