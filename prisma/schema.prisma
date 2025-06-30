@@ -15,3 +15,16 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  username  String @unique
+  firstName String
+  lastName  String
+
+  email String? @unique
+  image String?
+  
+}
