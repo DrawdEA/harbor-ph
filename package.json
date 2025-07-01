@@ -8,8 +8,8 @@
 		"start": "next start",
 		"lint": "next lint",
 		"format": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\"",
-		"db:setup": "npx prisma db push && npx tsx ./src/lib/seedTriggers.ts",
-		"db:push": "prisma db push",
+		"db:setup": "prisma migrate dev && tsx ./src/lib/sqlScripts/seedTriggers.ts && tsx ./src/lib/sqlScripts/grantPrivileges",
+		"db:migrate": "prisma migrate dev && tsx ./src/lib/sqlScripts/grantPrivileges",
 		"db:generate": "prisma generate"
 	},
 	"prisma": {

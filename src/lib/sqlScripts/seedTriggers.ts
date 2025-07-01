@@ -1,3 +1,14 @@
+/**
+ * Automates the creation of a user profile in the public schema.
+ *
+ * This script sets up a PostgreSQL trigger and function to synchronize new user
+ * sign-ups from Supabase's `auth.users` table to a public-facing
+ * `public.user_profiles` table. This ensures that every authenticated user
+ * has a corresponding profile record from the moment they are created.
+ * 
+ * https://supabase.com/docs/guides/auth/managing-user-data
+ */
+
 import postgres from "postgres";
 import "dotenv/config";
 
