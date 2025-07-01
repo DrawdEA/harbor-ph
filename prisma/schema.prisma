@@ -1,75 +1,246 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["auth", "public"]
 }
 
-model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean
-  image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
-  sessions      Session[]
-  accounts      Account[]
+/// Represents a user's public-facing profile.
+/// This table in the 'public' schema is linked one-to-one with the 'users' table
+/// in Supabase's 'auth' schema. It stores all non-sensitive, application-specific user data.
+model UserProfile {
+  id                String               @id @db.Uuid
+  username          String               @unique
+  email             String?              @unique
+  phone             String?
+  firstName         String?
+  lastName          String?
+  profilePictureUrl String?
+  bio               String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  bookings          Booking[]
+  organizerProfile  OrganizationProfile?
+  following         UserFollows[]        @relation("Following")
+  followedBy        UserFollows[]        @relation("FollowedBy")
 
-  @@unique([email])
-  @@map("user")
+  @@map("user_profiles")
+  @@schema("public")
 }
 
-model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String
-  createdAt DateTime
-  updatedAt DateTime
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+/// Represents an event organizer.
+/// A user must create an OrganizationProfile to be able to create and manage events.
+/// This separation keeps user-specific data and organizer-specific data clean.
+model OrganizationProfile {
+  id            String      @id @default(cuid())
+  name          String      @unique
+  description   String?
+  websiteUrl    String?
+  contactEmail  String?
+  contactNumber String?
+  isVerified    Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  userId        String      @unique @db.Uuid
+  events        Event[]
+  user          UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
-  @@map("session")
+  @@map("organization_profiles")
+  @@schema("public")
 }
 
-model Account {
-  id                    String    @id
-  accountId             String
-  providerId            String
-  userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  password              String?
-  createdAt             DateTime
-  updatedAt             DateTime
+/// This is an explicit many-to-many join table for the social following system.
+/// It allows any UserProfile to follow any other UserProfile.
+model UserFollows {
+  followerId  String      @db.Uuid
+  followingId String      @db.Uuid
+  createdAt   DateTime    @default(now())
+  follower    UserProfile @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   UserProfile @relation("FollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
 
-  @@map("account")
+  @@id([followerId, followingId])
+  @@map("user_follows")
+  @@schema("public")
 }
 
-model Verification {
-  id         String    @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
+/// The core model of the application. An Event is the "what" that users are interested in.
+/// It brings together the organizer, venue, and ticketing information.
+model Event {
+  id          String               @id @default(cuid())
+  title       String
+  description String
+  imageUrl    String
+  startTime   DateTime
+  endTime     DateTime
+  status      EventStatus          @default(DRAFT)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  organizerId String
+  venueId     String
+  bookings    Booking[]
+  categories  CategoriesOnEvents[]
+  organizer   OrganizationProfile  @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  venue       Venue                @relation(fields: [venueId], references: [id])
+  ticketTypes TicketType[]
 
-  @@map("verification")
+  @@index([organizerId])
+  @@index([venueId])
+  @@index([startTime])
+  @@map("events")
+  @@schema("public")
+}
+
+/// Represents a physical location where an event takes place.
+/// Making this a separate model allows for reusability (one venue can host many events)
+/// and is essential for the "events near you" feature.
+model Venue {
+  id         String   @id @default(cuid())
+  name       String
+  address    String
+  city       String
+  province   String
+  postalCode String?
+  country    String
+  latitude   Float
+  longitude  Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  events     Event[]
+
+  @@map("venues")
+  @@schema("public")
+}
+
+/// A tag or category that can be applied to an event (e.g., "Music", "Tech", "Food").
+/// This is used for discovery and filtering.
+model Category {
+  id     String               @id @default(cuid())
+  name   String               @unique
+  events CategoriesOnEvents[]
+
+  @@map("categories")
+  @@schema("public")
+}
+
+/// The join table to create a many-to-many relationship between Events and Categories.
+model CategoriesOnEvents {
+  eventId    String
+  categoryId String
+  assignedAt DateTime @default(now())
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, categoryId])
+  @@map("categories_on_events")
+  @@schema("public")
+}
+
+/// A template for a ticket. Organizers create types of tickets (e.g., "General Admission", "VIP")
+/// with a specific price and quantity. This is the inventory for the event.
+model TicketType {
+  id                String   @id @default(cuid())
+  name              String
+  price             Decimal  @db.Decimal(10, 2)
+  quantity          Int
+  availableQuantity Int
+  salesStartDate    DateTime
+  salesEndDate      DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  eventId           String
+  event             Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets           Ticket[]
+
+  @@index([eventId])
+  @@map("ticket_types")
+  @@schema("public")
+}
+
+/// The digital "receipt" for a transaction. A Booking represents a user's order
+/// for one or more tickets for a single event. It is the central record for a purchase.
+model Booking {
+  id              String         @id @default(cuid())
+  status          BookingStatus  @default(PENDING)
+  totalPrice      Decimal        @db.Decimal(10, 2)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  paymentMethod   PaymentOption?
+  paymentProofUrl String?
+  paymentIntentId String?        @unique
+  userId          String         @db.Uuid
+  eventId         String
+  event           Event          @relation(fields: [eventId], references: [id])
+  user            UserProfile    @relation(fields: [userId], references: [id])
+  tickets         Ticket[]
+
+  @@index([userId])
+  @@index([eventId])
+  @@map("bookings")
+  @@schema("public")
+}
+
+/// The individual, scannable entry pass. This is the "product" the user receives.
+/// A Ticket should ONLY be created AFTER its parent Booking has been successfully paid for
+/// and marked as CONFIRMED.
+model Ticket {
+  id           String       @id @default(cuid())
+  qrCodeValue  String       @unique
+  status       TicketStatus @default(VALID)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  bookingId    String
+  ticketTypeId String
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  ticketType   TicketType   @relation(fields: [ticketTypeId], references: [id])
+
+  @@index([bookingId])
+  @@index([ticketTypeId])
+  @@map("tickets")
+  @@schema("public")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum EventStatus { 
+  DRAFT 
+  PUBLISHED 
+  CANCELED 
+  COMPLETED 
+  @@schema("public") 
+}
+
+enum PaymentOption { 
+  ON_SITE_CASH 
+  GCASH_MANUAL 
+  GCASH_AUTOMATIC 
+  STRIPE 
+  @@map("payment_options") 
+  @@schema("public") 
+}
+
+enum BookingStatus { 
+  PENDING 
+  AWAITING_VERIFICATION 
+  CONFIRMED 
+  REJECTED 
+  CANCELED 
+  FAILED 
+  @@map("booking_status") 
+  @@schema("public") 
+}
+
+enum TicketStatus { 
+  VALID 
+  CHECKED_IN
+  CANCELED 
+  @@map("ticket_status") 
+  @@schema("public") 
 }
