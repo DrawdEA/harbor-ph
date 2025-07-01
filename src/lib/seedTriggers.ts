@@ -11,36 +11,29 @@ const sql = postgres(dbUrl);
 async function main() {
 	console.log("Setting up database functions and triggers for user profile handling...");
 
-	// This function is triggered when a new user signs up via Supabase Auth.
 	await sql`
     CREATE OR REPLACE FUNCTION public.handle_new_user()
     RETURNS TRIGGER AS $$
     BEGIN
-      -- Create a new row in public.user_profiles, populating it with data
-      -- available in the new auth.users record.
       INSERT INTO public.user_profiles (
         id,
         email,
         phone,
         username,
         "firstName",
-        "lastName"
+        "lastName",
+        "createdAt", 
+        "updatedAt" 
       )
       VALUES (
         new.id,
-        new.email, -- Directly copy the email from the auth record
-        new.phone, -- Directly copy the phone from the auth record
-
-        -- For the username, create a robust fallback system:
-        -- 1. Use the 'username' from sign-up metadata if provided.
-        -- 2. If not, use the user's email.
-        -- 3. If email is also not present (e.g., phone-only sign-up), use the phone number.
-        -- This ensures the username is always unique and non-null.
+        new.email,
+        new.phone,
         COALESCE(new.raw_user_meta_data ->> 'username', new.email, new.phone),
-
-        -- Get first/last names from metadata if they exist.
         new.raw_user_meta_data ->> 'firstName',
-        new.raw_user_meta_data ->> 'lastName'
+        new.raw_user_meta_data ->> 'lastName',
+        NOW(), 
+        NOW() 
       );
       RETURN new;
     END;
@@ -48,10 +41,12 @@ async function main() {
   `;
 	console.log("-> Function `handle_new_user` created/updated.");
 
-	// This trigger executes the function after a new user is created.
-	// Dropping it first makes the script safe to re-run.
 	await sql`
     DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+  `;
+	console.log("-> Dropped existing trigger if it existed.");
+
+	await sql`
     CREATE TRIGGER on_auth_user_created
       AFTER INSERT ON auth.users
       FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
