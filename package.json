@@ -8,11 +8,12 @@
 		"start": "next start",
 		"lint": "next lint",
 		"format": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\"",
-		"db:migrate": "prisma migrate dev",
+		"db:setup": "npx prisma db push && npx tsx lib/seedTriggers.ts",
+		"db:push": "prisma db push",
 		"db:generate": "prisma generate"
 	},
 	"prisma": {
-		"schema": "./prisma/schema"
+		"schema": "./prisma"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.1.1",
@@ -48,11 +49,13 @@
 		"clsx": "^2.1.1",
 		"cmdk": "^1.1.1",
 		"date-fns": "^4.1.0",
+		"dotenv": "^17.0.0",
 		"embla-carousel-react": "^8.6.0",
 		"input-otp": "^1.4.2",
 		"lucide-react": "^0.525.0",
 		"next": "15.3.4",
 		"next-themes": "^0.4.6",
+		"postgres": "^3.4.7",
 		"react": "^19.0.0",
 		"react-day-picker": "^9.7.0",
 		"react-dom": "^19.0.0",
@@ -75,6 +78,7 @@
 		"prettier": "^3.6.2",
 		"prettier-plugin-tailwindcss": "^0.6.13",
 		"prisma": "^6.10.1",
+		"supabase": "^2.30.4",
 		"tailwindcss": "^4",
 		"tsx": "^4.20.3",
 		"tw-animate-css": "^1.3.4",
