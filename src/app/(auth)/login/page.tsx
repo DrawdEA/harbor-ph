@@ -17,12 +17,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-
-type UserProfile = {
-	id: string; // This is typically the UUID from auth.users
-	username: string;
-	full_name: string;
-};
+import { redirect } from "next/navigation";
 
 const formSchema = z.object({
 	email: z.string().min(2, {
@@ -38,22 +33,10 @@ export default function Login() {
 
 	// Auth Check
 	const [session, setSession] = useState<any>(null);
-	const [profiles, setProfiles] = useState<UserProfile[]>([]);
 
 	async function fetchSession() {
 		const currentSession = await supabase.auth.getSession();
 		setSession(currentSession.data.session);
-	}
-
-	async function fetchUserProfiles() {
-		const { data, error } = await supabase.from("user_profiles").select("*");
-
-		if (error) {
-			console.error("Error fetching user profiles:", error.message);
-		} else if (data) {
-			console.log(data);
-			setProfiles(data);
-		}
 	}
 
 	async function handleSignOut() {
@@ -62,21 +45,15 @@ export default function Login() {
 			console.error(error);
 		} else {
 			console.log("Signed Out");
-			// NEW: Clear profiles list on sign out if desired
-			setProfiles([]);
+			redirect("/login");
 		}
 	}
 
 	useEffect(() => {
 		fetchSession();
-		fetchUserProfiles();
 
 		const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
 			setSession(session);
-			// Optional: Re-fetch profiles when auth state changes (e.g., after login)
-			if (session) {
-				fetchUserProfiles();
-			}
 		});
 
 		// Cleanup
@@ -84,6 +61,13 @@ export default function Login() {
 			authListener.subscription.unsubscribe(); // This prevents any memory leaks
 		};
 	}, []);
+
+	// Redirect if logged in
+	useEffect(() => {
+		if (session) {
+			redirect("/profile");
+		}
+	}, [session]);
 
 	// Forms
 	const form = useForm<z.infer<typeof formSchema>>({
@@ -107,7 +91,6 @@ export default function Login() {
 	}
 
 	return (
-		// UPDATED: Main container to center content better
 		<div className="container mx-auto flex min-h-screen flex-col items-center justify-center p-4">
 			<div className="w-full max-w-md">
 				{session && (
@@ -152,24 +135,6 @@ export default function Login() {
 							<Button type="submit">Login</Button>
 						</form>
 					</Form>
-				)}
-
-				{/* NEW: Section to display user profiles */}
-				{true && (
-					<div className="mt-12 w-full">
-						<h2 className="mb-4 text-center text-xl font-bold">All User Profiles</h2>
-						<ul className="bg-card text-card-foreground space-y-3 rounded-lg border p-4">
-							{profiles.map((profile) => (
-								<li
-									key={profile.id}
-									className="flex items-center justify-between border-b pb-2 last:border-b-0"
-								>
-									<span className="font-medium">{profile.full_name}</span>
-									<span className="text-muted-foreground text-sm">@{profile.username}</span>
-								</li>
-							))}
-						</ul>
-					</div>
 				)}
 			</div>
 		</div>
