@@ -70,10 +70,10 @@ export function Header() {
 						/>
 					</div>
 					<div className="ml-6 flex items-center gap-3">
-						<Link href="#" className="text-foreground hover:text-primary">
+						<Link href="/home" className="text-foreground hover:text-primary">
 							<Home size={22} />
 						</Link>
-						<Link href="#" className="text-foreground hover:text-primary">
+						<Link href="/profile" className="text-foreground hover:text-primary">
 							<User size={22} />
 						</Link>
 					</div>
@@ -81,11 +81,11 @@ export function Header() {
 			</header>
 			{/* Bottom bar (mobile only) */}
 			<nav className="bg-background border-border fixed right-0 bottom-0 left-0 z-30 flex items-center justify-around border-t py-2 md:hidden">
-				<Link href="#" className="text-foreground hover:text-primary flex flex-col items-center">
+				<Link href="/home" className="text-foreground hover:text-primary flex flex-col items-center">
 					<Home size={22} />
 					<span className="text-xs">Home</span>
 				</Link>
-				<Link href="#" className="text-foreground hover:text-primary flex flex-col items-center">
+				<Link href="/profile" className="text-foreground hover:text-primary flex flex-col items-center">
 					<User size={22} />
 					<span className="text-xs">Profile</span>
 				</Link>
