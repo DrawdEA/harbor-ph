@@ -1,6 +1,7 @@
 import { createWorker } from "tesseract.js";
 
-export async function readAllText(URL: string) {
+// TODO: Add error management
+export async function readImage(URL: string) {
 	const worker = await createWorker("eng");
 	const ret = await worker.recognize(URL);
 
