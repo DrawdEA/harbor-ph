@@ -1,6 +1,13 @@
 import { PDFExtract } from "pdf.js-extract";
 import fs from "fs";
 
+/*
+	Notes from this painful journey
+		- node-qpdf2 (after downloading GraphicsMagick & ghostscript952) is a super fast decrypter to remake the pdf
+		- pdf-lib, pdf-kit, pdf-parser, pdf2json, pdf2table, pdf-table-extractor all did not work or did not work well enough
+		- I even go desperate enough to try the pipeline of unlock pdf -> pdf to img -> ocr pdf -> delete all temp files
+*/
+
 const pdfExtract = new PDFExtract();
 const options = {
 	password: "", // Your password
