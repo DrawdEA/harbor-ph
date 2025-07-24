@@ -1,5 +1,3 @@
-// src/lib/gcashReaders/readInvoice.ts
-
 /**
  * @file This module provides a robust function for parsing GCash Transaction History PDFs.
  * @description This parser uses the `pdfreader` library because it reliably works in a Node.js
@@ -24,7 +22,9 @@ import { PdfReader } from "pdfreader";
  * @returns An object containing the transaction date range and a list of structured transactions.
  */
 function processExtractedData(data: { pages: { content: any[] }[] }) {
-	const preliminaryTransactions: any[] = [];
+	// The final list of transactions is now at the top level,
+	// so it persists across page loops.
+	const finalTransactions: any[] = [];
 	let dateRange: string | null = null;
 
 	const columnBoundaries = {
@@ -36,141 +36,138 @@ function processExtractedData(data: { pages: { content: any[] }[] }) {
 		balance: { start: 32, end: 35 },
 	};
 
-	// --- Pass 1: The "Anchored-Y" Row Detection (The Correct & Robust Method) ---
-	const rows: { y: number; items: any[] }[] = [];
-	const allContent = data.pages.flatMap((page) => page.content);
-	const content = allContent.sort((a, b) => a.y - b.y || a.x - b.x);
+	// Process each page sequentially
+	for (const page of data.pages) {
+		const preliminaryTransactions: any[] = [];
 
-	if (content.length > 0) {
-		let currentRow: any[] = [];
-		let currentRowY = -1;
+		// --- Pass 1: "Anchored-Y" Row Detection (runs for each page) ---
+		const rows: { y: number; items: any[] }[] = [];
+		const content = page.content.sort((a, b) => a.y - b.y || a.x - b.x);
 
-		// This tolerance is tight enough to separate lines but allows for
-		// minor character misalignments within a single line.
-		const ROW_TOLERANCE = 0.25;
+		if (content.length > 0) {
+			let currentRow: any[] = [];
+			let currentRowY = -1;
+			const ROW_TOLERANCE = 0.25;
 
-		for (const item of content) {
-			if (currentRow.length === 0 || Math.abs(item.y - currentRowY) > ROW_TOLERANCE) {
-				// Finish the old row if it exists
-				if (currentRow.length > 0) {
-					rows.push({ y: currentRowY, items: currentRow.sort((a, b) => a.x - b.x) });
+			for (const item of content) {
+				if (currentRow.length === 0 || Math.abs(item.y - currentRowY) > ROW_TOLERANCE) {
+					if (currentRow.length > 0) {
+						rows.push({ y: currentRowY, items: currentRow.sort((a, b) => a.x - b.x) });
+					}
+					currentRow = [item];
+					currentRowY = item.y;
+				} else {
+					currentRow.push(item);
 				}
-				// Start a new row
-				currentRow = [item];
-				currentRowY = item.y;
-			} else {
-				// Add to the current row
-				currentRow.push(item);
+			}
+			if (currentRow.length > 0) {
+				rows.push({ y: currentRowY, items: currentRow.sort((a, b) => a.x - b.x) });
 			}
 		}
-		// Add the very last row after the loop finishes
-		if (currentRow.length > 0) {
-			rows.push({ y: currentRowY, items: currentRow.sort((a, b) => a.x - b.x) });
-		}
-	}
 
-	// --- Pass 2: Create preliminary transaction objects for each (now correctly formed) visual line ---
-	for (const row of rows) {
-		if (row.items.length === 0) continue;
-		const startX = row.items[0].x;
+		// --- Pass 2: Create preliminary transaction objects (runs for each page) ---
+		for (const row of rows) {
+			if (row.items.length === 0) continue;
+			const startX = row.items[0].x;
 
-		const fullLineText = row.items
-			.map((item) => item.text)
-			.join("")
-			.replace(/\s/g, "")
-			.toUpperCase();
-
-		const ignoreKeywords = [
-			"GCASHTRANSACTIONHISTORY",
-			"STARTINGBALANCE",
-			"DATEANDTIMEDESCRIPTION",
-			"ENDINGBALANCE",
-			"TOTALDEBIT",
-			"TOTALCREDIT",
-		];
-		if (ignoreKeywords.some((keyword) => fullLineText.includes(keyword))) continue;
-
-		if (fullLineText.match(/\d{4}-\d{2}-\d{2}TO\d{4}-\d{2}-\d{2}/)) {
-			dateRange = row.items
-				.map((i) => i.text)
+			const fullLineText = row.items
+				.map((item) => item.text)
 				.join("")
-				.replace(/(\d{4}-\d{2}-\d{2})to(\d{4}-\d{2}-\d{2})/, "$1 to $2");
-			continue;
+				.replace(/\s/g, "")
+				.toUpperCase();
+
+			const ignoreKeywords = [
+				"GCASHTRANSACTIONHISTORY",
+				"STARTINGBALANCE",
+				"DATEANDTIMEDESCRIPTION",
+				"ENDINGBALANCE",
+				"TOTALDEBIT",
+				"TOTALCREDIT",
+			];
+			if (ignoreKeywords.some((keyword) => fullLineText.includes(keyword))) continue;
+
+			// Capture date range only if it hasn't been found yet
+			if (!dateRange && fullLineText.match(/\d{4}-\d{2}-\d{2}TO\d{4}-\d{2}-\d{2}/)) {
+				dateRange = row.items
+					.map((i) => i.text)
+					.join("")
+					.replace(/(\d{4}-\d{2}-\d{2})to(\d{4}-\d{2}-\d{2})/, "$1 to $2");
+				continue;
+			}
+
+			let dateStr = "",
+				descriptionStr = "",
+				referenceStr = "",
+				debitStr = "",
+				creditStr = "",
+				balanceStr = "";
+			for (const charItem of row.items) {
+				if (charItem.x >= columnBoundaries.date.start && charItem.x < columnBoundaries.date.end)
+					dateStr += charItem.text;
+				else if (
+					charItem.x >= columnBoundaries.description.start &&
+					charItem.x < columnBoundaries.description.end
+				)
+					descriptionStr += charItem.text;
+				else if (
+					charItem.x >= columnBoundaries.reference.start &&
+					charItem.x < columnBoundaries.reference.end
+				)
+					referenceStr += charItem.text;
+				else if (
+					charItem.x >= columnBoundaries.debit.start &&
+					charItem.x < columnBoundaries.debit.end
+				)
+					debitStr += charItem.text;
+				else if (
+					charItem.x >= columnBoundaries.credit.start &&
+					charItem.x < columnBoundaries.credit.end
+				)
+					creditStr += charItem.text;
+				else if (
+					charItem.x >= columnBoundaries.balance.start &&
+					charItem.x < columnBoundaries.balance.end
+				)
+					balanceStr += charItem.text;
+			}
+
+			const transaction = {
+				startX: startX,
+				date: dateStr.trim() || null,
+				description: descriptionStr.trim(),
+				reference: referenceStr.trim() || null,
+				debit: parseFloat(debitStr.trim().replace(/,/g, "")) || null,
+				credit: parseFloat(creditStr.trim().replace(/,/g, "")) || null,
+				balance: parseFloat(balanceStr.trim().replace(/,/g, "")) || null,
+			};
+
+			if (
+				Object.values(transaction).some(
+					(v) =>
+						(v !== null && v !== "" && v !== undefined && typeof v !== "number") ||
+						(typeof v === "number" && !isNaN(v)),
+				)
+			) {
+				preliminaryTransactions.push(transaction);
+			}
 		}
 
-		let dateStr = "",
-			descriptionStr = "",
-			referenceStr = "",
-			debitStr = "",
-			creditStr = "",
-			balanceStr = "";
-		for (const charItem of row.items) {
-			if (charItem.x >= columnBoundaries.date.start && charItem.x < columnBoundaries.date.end)
-				dateStr += charItem.text;
-			else if (
-				charItem.x >= columnBoundaries.description.start &&
-				charItem.x < columnBoundaries.description.end
-			)
-				descriptionStr += charItem.text;
-			else if (
-				charItem.x >= columnBoundaries.reference.start &&
-				charItem.x < columnBoundaries.reference.end
-			)
-				referenceStr += charItem.text;
-			else if (
-				charItem.x >= columnBoundaries.debit.start &&
-				charItem.x < columnBoundaries.debit.end
-			)
-				debitStr += charItem.text;
-			else if (
-				charItem.x >= columnBoundaries.credit.start &&
-				charItem.x < columnBoundaries.credit.end
-			)
-				creditStr += charItem.text;
-			else if (
-				charItem.x >= columnBoundaries.balance.start &&
-				charItem.x < columnBoundaries.balance.end
-			)
-				balanceStr += charItem.text;
+		// --- Pass 3: The Final Merge (crucially, this appends to the GLOBAL finalTransactions) ---
+		for (const currentTx of preliminaryTransactions) {
+			const isFragment = currentTx.startX >= columnBoundaries.description.start;
+
+			if (isFragment && finalTransactions.length > 0) {
+				const mainTx = finalTransactions[finalTransactions.length - 1];
+				mainTx.description = `${mainTx.description} ${currentTx.description}`.trim();
+				mainTx.reference = mainTx.reference || currentTx.reference;
+				mainTx.debit = mainTx.debit || currentTx.debit;
+				mainTx.credit = mainTx.credit || currentTx.credit;
+				mainTx.balance = mainTx.balance || currentTx.balance;
+			} else if (!isFragment) {
+				finalTransactions.push(currentTx);
+			}
 		}
-
-		const transaction = {
-			startX: startX,
-			date: dateStr.trim() || null,
-			description: descriptionStr.trim(),
-			reference: referenceStr.trim() || null,
-			debit: parseFloat(debitStr.trim().replace(/,/g, "")) || null,
-			credit: parseFloat(creditStr.trim().replace(/,/g, "")) || null,
-			balance: parseFloat(balanceStr.trim().replace(/,/g, "")) || null,
-		};
-
-		if (
-			Object.values(transaction).some(
-				(v) =>
-					(v !== null && v !== "" && v !== undefined && typeof v !== "number") ||
-					(typeof v === "number" && !isNaN(v)),
-			)
-		) {
-			preliminaryTransactions.push(transaction);
-		}
-	}
-
-	// --- Pass 3: The Final, Correct Merge using Start-X Logic ---
-	const finalTransactions: any[] = [];
-	for (const currentTx of preliminaryTransactions) {
-		const isFragment = currentTx.startX >= columnBoundaries.description.start;
-
-		if (isFragment && finalTransactions.length > 0) {
-			const mainTx = finalTransactions[finalTransactions.length - 1];
-			mainTx.description = `${mainTx.description} ${currentTx.description}`.trim();
-			mainTx.reference = mainTx.reference || currentTx.reference;
-			mainTx.debit = mainTx.debit || currentTx.debit;
-			mainTx.credit = mainTx.credit || currentTx.credit;
-			mainTx.balance = mainTx.balance || currentTx.balance;
-		} else if (!isFragment) {
-			finalTransactions.push(currentTx);
-		}
-	}
+	} // End of page loop
 
 	// Clean up the temporary 'startX' property before returning.
 	finalTransactions.forEach((tx) => delete tx.startX);
@@ -189,24 +186,40 @@ async function extractDataWithCoordinates(
 ): Promise<{ pages: { content: any[] }[] }> {
 	return new Promise((resolve, reject) => {
 		const pages: { [key: number]: any[] } = {};
-		let currentPage: number | null = null;
+
+		// The reader instance is created inside the promise
 		const reader = new PdfReader({ password });
 
 		reader.parseBuffer(pdfBuffer, (err, item) => {
 			if (err) {
-				reject(err);
-			} else if (!item) {
+				return reject(err);
+			}
+			if (!item) {
+				// End of document
 				const rawData = {
 					pages: Object.keys(pages)
 						.sort((a, b) => parseInt(a) - parseInt(b))
 						.map((pageNum) => ({ content: pages[parseInt(pageNum)] })),
 				};
-				resolve(rawData);
-			} else if (item.page) {
-				currentPage = item.page;
-			} else if (item.text && currentPage) {
-				if (!pages[currentPage]) pages[currentPage] = [];
-				pages[currentPage].push({ x: item.x, y: item.y, text: item.text });
+				return resolve(rawData);
+			}
+			if (item.page) {
+				// When a new page starts, we create an entry for it.
+				if (!pages[item.page]) {
+					pages[item.page] = [];
+				}
+			} else if (item.text) {
+				// The library doesn't consistently provide the page number with each text item.
+				// We assume the text belongs to the most recently seen page.
+				const currentPageNumber = Object.keys(pages).length;
+				if (currentPageNumber > 0 && pages[currentPageNumber]) {
+					pages[currentPageNumber].push({
+						x: item.x,
+						y: item.y,
+						text: item.text,
+						// We don't need to add the page number here, the structure handles it.
+					});
+				}
 			}
 		});
 	});
