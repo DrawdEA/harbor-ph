@@ -1,157 +1,165 @@
-import { PDFExtract } from "pdf.js-extract";
-import fs from "fs";
+// src/lib/gcashReaders/readInvoice.ts
 
-/*
-	Notes from this painful journey
-		- node-qpdf2 (after downloading GraphicsMagick & ghostscript952) is a super fast decrypter to remake the pdf
-		- pdf-lib, pdf-kit, pdf-parser, pdf2json, pdf2table, pdf-table-extractor all did not work or did not work well enough
-		- I even go desperate enough to try the pipeline of unlock pdf -> pdf to img -> ocr pdf -> delete all temp files
-*/
+/**
+ * @file This module provides a robust function for parsing GCash Transaction History PDFs.
+ * @description This parser uses the `pdfreader` library because it reliably works in a Node.js
+ * server environment, provides essential X/Y coordinate data for each character, and correctly
+ * handles password-protected files.
+ *
+ * The core strategy is a two-step process:
+ * 1. `extractDataWithCoordinates`: A low-level engine that uses `pdfreader` to convert the raw
+ *    PDF buffer into a structured array of text characters with their coordinates.
+ * 2. `processExtractedData`: A high-level parser that takes this structured data and uses a
+ *    coordinate-based system to map the characters into meaningful transaction fields.
+ */
 
-const pdfExtract = new PDFExtract();
-const options = {
-	password: "", // Your password
-};
+import { PdfReader } from "pdfreader";
 
-const outputFilePath = "./src/lib/gcashReaders/output.json";
-
-pdfExtract.extract(
-	"./src/lib/gcashReaders/<filename>.pdf",
-	options,
-	(err, data) => {
-		if (err) {
-			return console.error(err);
-		}
-
-		const extractedData = processExtractedData(data);
-
-		const finalOutput = {
-			dateRange: extractedData.dateRange,
-			transactions: extractedData.transactions,
-		};
-
-		try {
-			const jsonString = JSON.stringify(finalOutput, null, 2);
-			fs.writeFileSync(outputFilePath, jsonString);
-			console.log(`Successfully extracted data and saved it to ${outputFilePath}`);
-			if (finalOutput.dateRange) {
-				console.log(`Captured Date Range: ${finalOutput.dateRange}`);
-			}
-		} catch (error) {
-			console.error("Error writing JSON to file:", error);
-		}
-	},
-);
-
-function processExtractedData(data) {
-	const preliminaryTransactions = [];
-	let dateRange = null;
+/**
+ * Transforms raw, coordinate-based character data into structured transaction objects.
+ * This function contains all the business logic specific to the GCash PDF layout.
+ * It uses a multi-pass approach to correctly handle multi-line descriptions.
+ *
+ * @param data An object containing the pages and their content, as extracted by `extractDataWithCoordinates`.
+ * @returns An object containing the transaction date range and a list of structured transactions.
+ */
+function processExtractedData(data: { pages: { content: any[] }[] }) {
+	const preliminaryTransactions: any[] = [];
+	let dateRange: string | null = null;
 
 	const columnBoundaries = {
-		date: { start: 50, end: 120 },
-		description: { start: 120, end: 320 },
-		reference: { start: 320, end: 376 },
-		debit: { start: 376, end: 442 },
-		credit: { start: 442, end: 498 },
-		balance: { start: 498, end: 600 },
+		date: { start: 2, end: 7 },
+		description: { start: 7, end: 20 },
+		reference: { start: 20, end: 25 },
+		debit: { start: 26, end: 28 },
+		credit: { start: 29, end: 31 },
+		balance: { start: 32, end: 35 },
 	};
 
-	for (const page of data.pages) {
-		// --- ROW DETECTION LOGIC ---
-		const content = page.content.sort((a, b) => a.y - b.y || a.x - b.x);
-		const rows = [];
-		let currentRow = [];
-		let lastY = -1;
-		const ROW_TOLERANCE = 5; // A vertical gap of more than 5px starts a new row.
+	// --- Pass 1: The "Anchored-Y" Row Detection (The Correct & Robust Method) ---
+	const rows: { y: number; items: any[] }[] = [];
+	const allContent = data.pages.flatMap((page) => page.content);
+	const content = allContent.sort((a, b) => a.y - b.y || a.x - b.x);
+
+	if (content.length > 0) {
+		let currentRow: any[] = [];
+		let currentRowY = -1;
+
+		// This tolerance is tight enough to separate lines but allows for
+		// minor character misalignments within a single line.
+		const ROW_TOLERANCE = 0.25;
 
 		for (const item of content) {
-			if (item.str.trim() === "") continue;
-
-			if (lastY === -1 || Math.abs(item.y - lastY) > ROW_TOLERANCE) {
+			if (currentRow.length === 0 || Math.abs(item.y - currentRowY) > ROW_TOLERANCE) {
+				// Finish the old row if it exists
 				if (currentRow.length > 0) {
-					rows.push(currentRow.sort((a, b) => a.x - b.x)); // Sort items in the completed row by x-pos
+					rows.push({ y: currentRowY, items: currentRow.sort((a, b) => a.x - b.x) });
 				}
+				// Start a new row
 				currentRow = [item];
+				currentRowY = item.y;
 			} else {
+				// Add to the current row
 				currentRow.push(item);
 			}
-			lastY = item.y;
 		}
+		// Add the very last row after the loop finishes
 		if (currentRow.length > 0) {
-			rows.push(currentRow.sort((a, b) => a.x - b.x));
-		}
-		// --- END OF ROW DETECTION LOGIC ---
-
-		// --- PASS 1: PARSING THE CORRECTLY FORMED ROWS ---
-		for (const rowItems of rows) {
-			const rowText = rowItems
-				.map((item) => item.str)
-				.join("")
-				.trim();
-
-			if (rowText.includes("GCash Transaction History") || rowText.includes("STARTING BALANCE"))
-				continue;
-			if (rowText.match(/\d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}/)) {
-				dateRange = rowText;
-				continue;
-			}
-			if (rowText.includes("Date and Time") && rowText.includes("Description")) continue;
-			if (
-				rowText.includes("ENDING BALANCE") ||
-				rowText.includes("Total Debit") ||
-				rowText.includes("Total Credit")
-			)
-				continue;
-
-			const transaction = {
-				date: null,
-				description: "",
-				reference: null,
-				debit: null,
-				credit: null,
-				balance: null,
-			};
-
-			for (const item of rowItems) {
-				if (item.x >= columnBoundaries.date.start && item.x < columnBoundaries.date.end) {
-					transaction.date = (transaction.date || "") + item.str.trim();
-				} else if (
-					item.x >= columnBoundaries.description.start &&
-					item.x < columnBoundaries.description.end
-				) {
-					transaction.description = (transaction.description || "") + item.str + " ";
-				} else if (
-					item.x >= columnBoundaries.reference.start &&
-					item.x < columnBoundaries.reference.end
-				) {
-					transaction.reference = (transaction.reference || "") + item.str.trim();
-				} else if (item.x >= columnBoundaries.debit.start && item.x < columnBoundaries.debit.end) {
-					transaction.debit = parseFloat(item.str.trim().replace(/,/g, "")) || null;
-				} else if (
-					item.x >= columnBoundaries.credit.start &&
-					item.x < columnBoundaries.credit.end
-				) {
-					transaction.credit = parseFloat(item.str.trim().replace(/,/g, "")) || null;
-				} else if (
-					item.x >= columnBoundaries.balance.start &&
-					item.x < columnBoundaries.balance.end
-				) {
-					transaction.balance = parseFloat(item.str.trim().replace(/,/g, "")) || null;
-				}
-			}
-
-			transaction.description = transaction.description.trim();
-
-			if (transaction.description || transaction.date || transaction.balance !== null) {
-				preliminaryTransactions.push(transaction);
-			}
+			rows.push({ y: currentRowY, items: currentRow.sort((a, b) => a.x - b.x) });
 		}
 	}
 
-	// --- PASS 2: FORWARD-PASS MERGE ALGORITHM (This will now work correctly) ---
-	const finalTransactions = [];
+	// --- Pass 2: Create preliminary transaction objects for each (now correctly formed) visual line ---
+	for (const row of rows) {
+		if (row.items.length === 0) continue;
+		const startX = row.items[0].x;
+
+		const fullLineText = row.items
+			.map((item) => item.text)
+			.join("")
+			.replace(/\s/g, "")
+			.toUpperCase();
+
+		const ignoreKeywords = [
+			"GCASHTRANSACTIONHISTORY",
+			"STARTINGBALANCE",
+			"DATEANDTIMEDESCRIPTION",
+			"ENDINGBALANCE",
+			"TOTALDEBIT",
+			"TOTALCREDIT",
+		];
+		if (ignoreKeywords.some((keyword) => fullLineText.includes(keyword))) continue;
+
+		if (fullLineText.match(/\d{4}-\d{2}-\d{2}TO\d{4}-\d{2}-\d{2}/)) {
+			dateRange = row.items
+				.map((i) => i.text)
+				.join("")
+				.replace(/(\d{4}-\d{2}-\d{2})to(\d{4}-\d{2}-\d{2})/, "$1 to $2");
+			continue;
+		}
+
+		let dateStr = "",
+			descriptionStr = "",
+			referenceStr = "",
+			debitStr = "",
+			creditStr = "",
+			balanceStr = "";
+		for (const charItem of row.items) {
+			if (charItem.x >= columnBoundaries.date.start && charItem.x < columnBoundaries.date.end)
+				dateStr += charItem.text;
+			else if (
+				charItem.x >= columnBoundaries.description.start &&
+				charItem.x < columnBoundaries.description.end
+			)
+				descriptionStr += charItem.text;
+			else if (
+				charItem.x >= columnBoundaries.reference.start &&
+				charItem.x < columnBoundaries.reference.end
+			)
+				referenceStr += charItem.text;
+			else if (
+				charItem.x >= columnBoundaries.debit.start &&
+				charItem.x < columnBoundaries.debit.end
+			)
+				debitStr += charItem.text;
+			else if (
+				charItem.x >= columnBoundaries.credit.start &&
+				charItem.x < columnBoundaries.credit.end
+			)
+				creditStr += charItem.text;
+			else if (
+				charItem.x >= columnBoundaries.balance.start &&
+				charItem.x < columnBoundaries.balance.end
+			)
+				balanceStr += charItem.text;
+		}
+
+		const transaction = {
+			startX: startX,
+			date: dateStr.trim() || null,
+			description: descriptionStr.trim(),
+			reference: referenceStr.trim() || null,
+			debit: parseFloat(debitStr.trim().replace(/,/g, "")) || null,
+			credit: parseFloat(creditStr.trim().replace(/,/g, "")) || null,
+			balance: parseFloat(balanceStr.trim().replace(/,/g, "")) || null,
+		};
+
+		if (
+			Object.values(transaction).some(
+				(v) =>
+					(v !== null && v !== "" && v !== undefined && typeof v !== "number") ||
+					(typeof v === "number" && !isNaN(v)),
+			)
+		) {
+			preliminaryTransactions.push(transaction);
+		}
+	}
+
+	// --- Pass 3: The Final, Correct Merge using Start-X Logic ---
+	const finalTransactions: any[] = [];
 	for (const currentTx of preliminaryTransactions) {
-		const isFragment = currentTx.date === null;
+		const isFragment = currentTx.startX >= columnBoundaries.description.start;
+
 		if (isFragment && finalTransactions.length > 0) {
 			const mainTx = finalTransactions[finalTransactions.length - 1];
 			mainTx.description = `${mainTx.description} ${currentTx.description}`.trim();
@@ -164,5 +172,66 @@ function processExtractedData(data) {
 		}
 	}
 
+	// Clean up the temporary 'startX' property before returning.
+	finalTransactions.forEach((tx) => delete tx.startX);
+
 	return { dateRange, transactions: finalTransactions };
+}
+
+
+/**
+ * Low-level PDF parsing engine. It wraps the event-based `pdfreader` library
+ * in a modern Promise-based interface.
+ */
+async function extractDataWithCoordinates(
+	pdfBuffer: Buffer,
+	password: string,
+): Promise<{ pages: { content: any[] }[] }> {
+	return new Promise((resolve, reject) => {
+		const pages: { [key: number]: any[] } = {};
+		let currentPage: number | null = null;
+		const reader = new PdfReader({ password });
+
+		reader.parseBuffer(pdfBuffer, (err, item) => {
+			if (err) {
+				reject(err);
+			} else if (!item) {
+				const rawData = {
+					pages: Object.keys(pages)
+						.sort((a, b) => parseInt(a) - parseInt(b))
+						.map((pageNum) => ({ content: pages[parseInt(pageNum)] })),
+				};
+				resolve(rawData);
+			} else if (item.page) {
+				currentPage = item.page;
+			} else if (item.text && currentPage) {
+				if (!pages[currentPage]) pages[currentPage] = [];
+				pages[currentPage].push({ x: item.x, y: item.y, text: item.text });
+			}
+		});
+	});
+}
+
+/**
+ * The main exported function that orchestrates the entire PDF parsing pipeline.
+ */
+export async function parseGcashPdf(pdfBuffer: Buffer, password: string="") {
+	try {
+		// Step 1: Call the engine to get raw character data with coordinates.
+		const rawData = await extractDataWithCoordinates(pdfBuffer, password);
+
+		// Step 2: Pass the raw data to the high-level processor to get final results.
+		console.log(JSON.stringify(processExtractedData(rawData),null,2));
+		return processExtractedData(rawData);
+	} catch (error: any) {
+		console.error("Failed to parse PDF with pdfreader:", error);
+		// Translate low-level errors into user-friendly messages.
+		if (error?.message?.includes("PasswordException")) {
+			throw new Error("Invalid password provided for the PDF.");
+		}
+		throw new Error(
+			error?.message ||
+				"Could not process the PDF file. It might be corrupted or in an unsupported format.",
+		);
+	}
 }
