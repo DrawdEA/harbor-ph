@@ -1,6 +1,6 @@
 "use client";
 
-import { supabase } from "@/lib/supabase-client";
+import { createClient } from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,6 +37,8 @@ const formSchema = z.object({
 });
 
 export default function Personal() {
+	const supabase = createClient();
+
 	// Auth Check
 	const [session, setSession] = useState<any>(null);
 
@@ -72,9 +74,12 @@ export default function Personal() {
 	}
 
 	return (
-		<div className="mt-[10%] ml-[10%] flex h-screen w-[30%] flex-col items-center">
+		<>
+			<div className="font-raleway text-foreground mb-3 pb-6 text-center text-2xl font-extrabold sm:mb-4 sm:text-lg w-9/10">
+				Create your personal account.
+			</div>
 			<Form {...form}>
-				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 flex flex-col w-9/10">
 					<FormField
 						control={form.control}
 						name="username"
@@ -143,6 +148,6 @@ export default function Personal() {
 					<Button type="submit">Submit</Button>
 				</form>
 			</Form>
-		</div>
+		</>
 	);
 }

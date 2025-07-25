@@ -1,6 +1,6 @@
 export default function RegisterFooter() {
 	return (
-		<div className="mt-8 mb-4 flex w-full flex-col items-center text-center text-sm">
+		<div className="mt-16 mb-4 flex w-full flex-col items-center text-center text-sm">
 			<span className="font-raleway text-lg font-extrabold">
 				Host your <span className="text-primary">next event</span> on Harbor.
 			</span>

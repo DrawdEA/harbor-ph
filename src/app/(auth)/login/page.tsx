@@ -39,15 +39,15 @@ export default function Login() {
 		setSession(currentSession.data.session);
 	}
 
-	async function handleSignOut() {
-		const { error } = await supabase.auth.signOut();
-		if (error) {
-			console.error(error);
-		} else {
-			console.log("Signed Out");
-			redirect("/login");
-		}
-	}
+	// async function handleSignOut() {
+	// 	const { error } = await supabase.auth.signOut();
+	// 	if (error) {
+	// 		console.error(error);
+	// 	} else {
+	// 		console.log("Signed Out");
+	// 		redirect("/login");
+	// 	}
+	// }
 
 	useEffect(() => {
 		fetchSession();
@@ -91,52 +91,45 @@ export default function Login() {
 	}
 
 	return (
-		<div className="container mx-auto flex min-h-screen flex-col items-center justify-center p-4">
-			<div className="w-full max-w-md">
-				{session && (
-					<div className="bg-card text-card-foreground mb-10 rounded-lg border p-6 shadow-sm">
-						<h1 className="mb-4 text-2xl font-semibold">You are signed in!</h1>
-						<p className="text-muted-foreground mb-4 text-sm">{session.user.email}</p>
-						<Button variant="outline" onClick={() => handleSignOut()}>
-							Sign Out
-						</Button>
-					</div>
-				)}
-
-				{!session && (
-					<Form {...form}>
-						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-							<FormField
-								control={form.control}
-								name="email"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Email</FormLabel>
-										<FormControl>
-											<Input placeholder="you@example.com" {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name="password"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Password</FormLabel>
-										<FormControl>
-											<Input type="password" {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<Button type="submit">Login</Button>
-						</form>
-					</Form>
-				)}
+		<>
+			<div className="font-raleway text-foreground mb-3 pb-6 text-center text-2xl font-extrabold sm:mb-4 sm:text-lg w-9/10">
+				Log in to your account.
 			</div>
-		</div>
+			<Form {...form} >
+				{/* Add w-full to make the form expand */}
+				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 flex flex-col w-9/10">
+					<FormField
+						control={form.control}
+						name="email"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Email</FormLabel>
+								<FormControl>
+									<Input placeholder="you@example.com" {...field} />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="password"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Password</FormLabel>
+								<FormControl>
+									<Input type="password" {...field} />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<div className="flex justify-center">
+						<Button type="submit" className="w-full">Login</Button>
+					</div>
+				</form>
+			</Form>
+		</>
 	);
 }
