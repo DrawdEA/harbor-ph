@@ -62,12 +62,12 @@ export default function Login() {
 		};
 	}, []);
 
-	// Redirect if logged in
-	useEffect(() => {
-		if (session) {
-			redirect("/profile");
-		}
-	}, [session]);
+	// // Redirect if logged in
+	// useEffect(() => {
+	// 	if (session) {
+	// 		redirect("/profile");
+	// 	}
+	// }, [session]);
 
 	// Forms
 	const form = useForm<z.infer<typeof formSchema>>({
