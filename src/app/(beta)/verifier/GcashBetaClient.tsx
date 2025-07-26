@@ -7,59 +7,44 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
-// Import the updated server action and the data types
-import { processGcashPdf, uploadReceipt } from "./actions"; // Adjust path if actions.ts is not in the same directory
-import { GcashExtractedData } from "@/lib/gcashReaders/betaManualReadInvoice"; // Adjust path based on your project structure
+import { processGcashPdf, uploadReceipt } from "./actions";
+import { GcashExtractedData } from "@/lib/gcashReaders/readInvoice";
 
 export default function GcashBetaClient() {
-	// State for pending transitions for each section
 	const [isPendingPdf, startTransitionPdf] = useTransition();
 	const [isPendingReceipt, startTransitionReceipt] = useTransition();
 
-	// State for Organizer section (PDF)
+	// Organizer section state
 	const [pdfFile, setPdfFile] = useState<File | null>(null);
 	const [pdfPassword, setPdfPassword] = useState<string>("");
-	const pdfInputRef = useRef<HTMLInputElement>(null); // Ref to clear file input
-	const [extractedPdfData, setExtractedPdfData] = useState<GcashExtractedData | null>(null); // State to store extracted data
+	const pdfInputRef = useRef<HTMLInputElement>(null);
+	const [extractedPdfData, setExtractedPdfData] = useState<GcashExtractedData | null>(null);
 
-	// State for Client section (Receipt)
+	// Client section state
 	const [receiptImage, setReceiptImage] = useState<File | null>(null);
-	const receiptInputRef = useRef<HTMLInputElement>(null); // Ref to clear file input
+	const receiptInputRef = useRef<HTMLInputElement>(null);
 
-	// Handler for PDF file input change
 	const handlePdfFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		if (event.target.files && event.target.files[0]) {
-			setPdfFile(event.target.files[0]);
-		} else {
-			setPdfFile(null);
+		const file = event.target.files?.[0] || null;
+		setPdfFile(file);
+		if (file) {
+			setExtractedPdfData(null); // Clear previous data when a new file is selected
 		}
-		setExtractedPdfData(null); // Clear previous data when a new file is selected
 	};
 
-	// Handler for Receipt image input change
 	const handleReceiptImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		if (event.target.files && event.target.files[0]) {
-			setReceiptImage(event.target.files[0]);
-		} else {
-			setReceiptImage(null);
-		}
+		const file = event.target.files?.[0] || null;
+		setReceiptImage(file);
 	};
 
-	// Handles submission for PDF processing
 	const handlePdfSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-		event.preventDefault(); // Prevent default form submission
-
+		event.preventDefault();
 		if (!pdfFile) {
-			toast.error("Missing PDF File", {
-				description: "Please select a PDF document to process.",
-			});
+			toast.error("Missing PDF File", { description: "Please select a PDF to process." });
 			return;
 		}
-
 		if (!pdfPassword.trim()) {
-			toast.error("Missing Password", {
-				description: "Please enter the PDF password.",
-			});
+			toast.error("Missing Password", { description: "Please enter the PDF password." });
 			return;
 		}
 
@@ -68,37 +53,37 @@ export default function GcashBetaClient() {
 		formData.append("password", pdfPassword);
 
 		startTransitionPdf(async () => {
-			const result = await processGcashPdf(formData); // Call the new server action
-			if (result.success) {
-				toast.success("PDF Processed Successfully!", {
-					description:
-						result.message +
-						(result.data?.dateRange ? ` Date Range: ${result.data.dateRange}` : ""),
-				});
-				setExtractedPdfData(result.data || null); // Store the extracted data
-				console.log("Extracted PDF Data:", result.data); // Log for debugging
+			try {
+				const result = await processGcashPdf(formData);
 
-				// Clear the form after successful processing
-				setPdfFile(null);
-				setPdfPassword("");
-				if (pdfInputRef.current) pdfInputRef.current.value = "";
-			} else {
-				toast.error("Error Processing PDF", {
-					description: result.message,
+				if (result.success) {
+					toast.success("PDF Processed Successfully!", {
+						description: `${result.message} Date Range: ${result.data.dateRange || "N/A"}`,
+					});
+					setExtractedPdfData(result.data); // Store the full extracted data
+					console.log("Extracted PDF Data:", result.data);
+
+					// Clear the form after successful processing
+					setPdfFile(null);
+					setPdfPassword("");
+					if (pdfInputRef.current) pdfInputRef.current.value = "";
+				} else {
+					toast.error("Error Processing PDF", { description: result.message });
+					setExtractedPdfData(null); // Clear data on error
+				}
+			} catch (error) {
+				toast.error("An Unexpected Error Occurred", {
+					description: "Could not connect to the server. Please try again.",
 				});
-				setExtractedPdfData(null); // Clear data on error
+				setExtractedPdfData(null);
 			}
 		});
 	};
 
-	// Handles submission for receipt image upload (remains unchanged)
 	const handleReceiptSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-		event.preventDefault(); // Prevent default form submission
-
+		event.preventDefault();
 		if (!receiptImage) {
-			toast.error("Missing Receipt Image", {
-				description: "Please select a receipt image to upload.",
-			});
+			toast.error("Missing Receipt Image", { description: "Please select an image to upload." });
 			return;
 		}
 
@@ -108,18 +93,12 @@ export default function GcashBetaClient() {
 		startTransitionReceipt(async () => {
 			const result = await uploadReceipt(formData);
 			if (result.success) {
-				toast.success("Receipt Uploaded!", {
-					description: result.message,
-				});
-				// Log processed data if available (for debugging/further use)
+				toast.success("Receipt Uploaded!", { description: result.message });
 				console.log("Processed Receipt Data:", result.data);
-				// Clear the form after successful upload
 				setReceiptImage(null);
 				if (receiptInputRef.current) receiptInputRef.current.value = "";
 			} else {
-				toast.error("Error Uploading Receipt", {
-					description: result.message,
-				});
+				toast.error("Error Uploading Receipt", { description: result.message });
 			}
 		});
 	};
@@ -127,7 +106,7 @@ export default function GcashBetaClient() {
 	return (
 		<div className="container mx-auto p-4 md:p-8">
 			<div className="flex flex-col items-start justify-center md:flex-row md:space-x-8">
-				{/* Organizer Portion: PDF Password Check / Processing */}
+				{/* Organizer Portion: PDF Processing */}
 				<div className="mb-8 w-full md:mb-0 md:w-1/2">
 					<Card>
 						<CardHeader>
@@ -145,10 +124,9 @@ export default function GcashBetaClient() {
 										onChange={handlePdfFileChange}
 										ref={pdfInputRef}
 										disabled={isPendingPdf}
-										aria-describedby="pdf-file-info"
 									/>
 									{pdfFile && (
-										<p id="pdf-file-info" className="text-muted-foreground text-sm">
+										<p className="text-muted-foreground text-sm">
 											Selected: {pdfFile.name} ({(pdfFile.size / 1024 / 1024).toFixed(2)} MB)
 										</p>
 									)}
@@ -158,7 +136,7 @@ export default function GcashBetaClient() {
 									<Input
 										id="pdfPassword"
 										type="password"
-										placeholder="Enter PDF password (if any)"
+										placeholder="Enter PDF password"
 										value={pdfPassword}
 										onChange={(e) => setPdfPassword(e.target.value)}
 										disabled={isPendingPdf}
@@ -169,41 +147,32 @@ export default function GcashBetaClient() {
 								</Button>
 							</form>
 
-							{/* Display extracted data summary if available */}
+							{/* --- NEW: Display extracted data summary AND full JSON --- */}
 							{extractedPdfData && (
 								<div className="mt-6 border-t pt-4">
-									<h4 className="text-lg font-semibold">Extracted Data Summary:</h4>
+									<h4 className="text-lg font-semibold">Extraction Result:</h4>
 									<p>
 										<strong>Date Range:</strong> {extractedPdfData.dateRange || "N/A"}
 									</p>
 									<p>
 										<strong>Total Transactions:</strong> {extractedPdfData.transactions.length}
 									</p>
-									{extractedPdfData.transactions.length > 0 && (
-										<div className="text-muted-foreground mt-2 max-h-48 overflow-y-auto text-sm">
-											<p className="font-medium">Sample Transactions:</p>
-											<ul className="list-inside list-disc">
-												{extractedPdfData.transactions.slice(0, 3).map((tx, index) => (
-													<li key={index}>
-														{tx.date}:{" "}
-														{tx.description.substring(0, Math.min(tx.description.length, 50))}...
-														(Debit: {tx.debit !== null ? tx.debit : "N/A"}, Credit:{" "}
-														{tx.credit !== null ? tx.credit : "N/A"})
-													</li>
-												))}
-												{extractedPdfData.transactions.length > 3 && (
-													<li>... and {extractedPdfData.transactions.length - 3} more.</li>
-												)}
-											</ul>
-										</div>
-									)}
+
+									<details className="mt-4">
+										<summary className="cursor-pointer font-medium hover:underline">
+											View Full Extracted JSON
+										</summary>
+										<pre className="mt-2 w-full overflow-x-auto rounded-md bg-gray-100 p-3 text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+											<code>{JSON.stringify(extractedPdfData, null, 2)}</code>
+										</pre>
+									</details>
 								</div>
 							)}
 						</CardContent>
 					</Card>
 				</div>
 
-				{/* Vertical Separator Bar */}
+				{/* Vertical Separator */}
 				<div className="my-4 hidden w-px self-stretch bg-gray-300 md:my-0 md:block dark:bg-gray-700"></div>
 
 				{/* Client Portion: Receipt Upload */}
@@ -224,17 +193,16 @@ export default function GcashBetaClient() {
 										onChange={handleReceiptImageChange}
 										ref={receiptInputRef}
 										disabled={isPendingReceipt}
-										aria-describedby="receipt-image-info"
 									/>
 									{receiptImage && (
-										<p id="receipt-image-info" className="text-muted-foreground text-sm">
+										<p className="text-muted-foreground text-sm">
 											Selected: {receiptImage.name} ({(receiptImage.size / 1024 / 1024).toFixed(2)}{" "}
 											MB)
 										</p>
 									)}
 								</div>
 								<Button type="submit" disabled={isPendingReceipt || !receiptImage}>
-									{isPendingReceipt ? "Uploading Receipt..." : "Upload Receipt"}
+									{isPendingReceipt ? "Uploading..." : "Upload Receipt"}
 								</Button>
 							</form>
 						</CardContent>

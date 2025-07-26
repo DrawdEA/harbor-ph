@@ -14,6 +14,26 @@
 import { PdfReader } from "pdfreader";
 
 /**
+ * Represents a single parsed transaction from the GCash statement.
+ */
+export interface GcashTransaction {
+	date: string | null;
+	description: string;
+	reference: string | null;
+	debit: number | null;
+	credit: number | null;
+	balance: number | null;
+}
+
+/**
+ * Represents the entire set of data extracted from the GCash PDF.
+ */
+export interface GcashExtractedData {
+	dateRange: string | null;
+	transactions: GcashTransaction[];
+}
+
+/**
  * Transforms raw, coordinate-based character data into structured transaction objects.
  * This function contains all the business logic specific to the GCash PDF layout.
  * It uses a multi-pass approach to correctly handle multi-line descriptions.
@@ -234,7 +254,6 @@ export async function parseGcashPdf(pdfBuffer: Buffer, password: string="") {
 		const rawData = await extractDataWithCoordinates(pdfBuffer, password);
 
 		// Step 2: Pass the raw data to the high-level processor to get final results.
-		console.log(JSON.stringify(processExtractedData(rawData),null,2));
 		return processExtractedData(rawData);
 	} catch (error: any) {
 		console.error("Failed to parse PDF with pdfreader:", error);
