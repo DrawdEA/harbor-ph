@@ -44,11 +44,8 @@ export default function Home() {
 	}, [hasNextPage, fetchNextPage]);
 
 	return (
-		<div className="bg-background min-h-screen">
-			<div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+		<div className="mx-auto max-w-3xl">
 				<div className="grid grid-cols-1 gap-4 sm:gap-6">
-					{/* --- UPDATED LOGIC --- */}
-
 					{status === "pending" ? (
 						// Show ShadCN skeletons on initial load
 						<>
@@ -57,7 +54,7 @@ export default function Home() {
 							<EventCardSkeleton />
 						</>
 					) : status === "error" ? (
-						<p className="col-span-full text-center text-red-500">Error: {error.message}</p>
+						<p className="col-span-full text-center text-primary">Error: {error.message}</p>
 					) : (
 						// Render the loaded pages
 						data.pages.map((page, i) => (
@@ -89,6 +86,5 @@ export default function Home() {
 					</p>
 				)}
 			</div>
-		</div>
 	);
 }
