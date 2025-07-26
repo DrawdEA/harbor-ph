@@ -28,7 +28,7 @@ export interface GcashTransaction {
 /**
  * Represents the entire set of data extracted from the GCash PDF.
  */
-export interface GcashExtractedData {
+export interface GcashInvoiceExtractedData {
 	dateRange: string | null;
 	transactions: GcashTransaction[];
 }

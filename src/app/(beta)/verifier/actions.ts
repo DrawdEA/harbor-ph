@@ -1,6 +1,7 @@
 "use server";
 
 import { parseGcashPdf, GcashExtractedData } from "@/lib/gcashReaders/readInvoice";
+import { parseGcashReceipt, GcashReceiptData } from "@/lib/gcashReaders/readReceipt";
 
 // Define a consistent result type for our actions
 type ActionResult<T> =
@@ -54,10 +55,11 @@ export async function processGcashPdf(
 }
 
 /**
- * Uploads a receipt image for processing.
+ * Uploads a receipt image, processes it on the server, and returns the data.
  */
-export async function uploadReceipt(formData: FormData): Promise<ActionResult<any>> {
-	// 'any' for unknown API response
+export async function uploadReceipt(
+	formData: FormData,
+): Promise<ActionResult<GcashReceiptData>> { // Use the correct return type
 	const receiptImage = formData.get("receiptImage") as File | null;
 
 	if (!receiptImage) {
@@ -74,34 +76,25 @@ export async function uploadReceipt(formData: FormData): Promise<ActionResult<an
 	}
 
 	try {
-		const apiFormData = new FormData();
-		apiFormData.append("file", receiptImage);
+		// Convert the File to a Buffer for the OCR function
+		const arrayBuffer = await receiptImage.arrayBuffer();
+		const imageBuffer = Buffer.from(arrayBuffer);
 
-		// NOTE: This assumes you have a running API endpoint at /api/upload/receipt
-		// This could be another Next.js API route or an external service.
-		const response = await fetch("http://localhost:3000/api/upload/receipt", {
-			// Use absolute URL for server-side fetch
-			method: "POST",
-			body: apiFormData,
-		});
+		// Directly call your OCR function
+		const extractedData = await parseGcashReceipt(imageBuffer);
 
-		const resultData = await response.json();
-
-		if (!response.ok) {
-			console.error("Receipt processing API error:", response.status, resultData);
-			return {
-				success: false,
-				message: `Failed to process receipt: ${resultData.message || response.statusText}`,
-			};
+		// Check if we got at least some data
+		if (!extractedData.referenceNumber && !extractedData.amount) {
+			return { success: false, message: "Could not extract key details from the receipt. Please try a clearer image." };
 		}
-
+		
 		return {
 			success: true,
-			message: "Receipt uploaded and processed successfully!",
-			data: resultData,
+			message: "Receipt processed successfully!",
+			data: extractedData,
 		};
 	} catch (error: any) {
-		console.error("Error uploading receipt:", error);
-		return { success: false, message: `An error occurred during receipt upload: ${error.message}` };
+		console.error("Error processing receipt on server:", error);
+		return { success: false, message: `An error occurred during receipt processing: ${error.message}` };
 	}
 }
