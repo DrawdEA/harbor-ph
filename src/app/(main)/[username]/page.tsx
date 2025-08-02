@@ -17,22 +17,16 @@ interface DynamicProfilePageProps {
 export default async function DynamicProfilePage({ params }: DynamicProfilePageProps) {
 	const supabase = await createClient();
 
-	// ✨ CHANGE 2: We no longer check who is logged in here. This page is public.
-	// We use the username from the URL to fetch the profile.
 	const { data: profile, error } = await supabase
 		.from('user_profiles')
 		.select('*')
 		.eq('username', params.username) // Use the username from the URL params
 		.single();
 
-	// ✨ CHANGE 3: If no profile is found for that username, we show a 404 page.
-	// This is the correct behavior for a public page.
 	if (error || !profile) {
 		notFound();
 	}
-
-	// The rest of the component assembly is EXACTLY the same.
-	// This shows the power of your component-based structure!
+	
 	return (
 		<UserProfileShell
 			header={<UserProfileHeader profile={profile} />} 

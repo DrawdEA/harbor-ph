@@ -12,11 +12,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navTabs = [
-	{ label: "For You", href: "#" },
-	{ label: "Parties", href: "#" },
-	{ label: "Flea Markets", href: "#" },
-	{ label: "Concerts", href: "#" },
-	{ label: "Runnin", href: "#" },
+	{ label: "For You", href: "/" },
+	{ label: "People", href: "/people" },
+	{ label: "Events", href: "/events" },
 ];
 
 const profileMenuItems = [

@@ -13,7 +13,7 @@ interface UserProfileHeaderProps {
 export default function UserProfileHeader({ profile, activeTab, setActiveTab }: UserProfileHeaderProps) {
   const tabs = ["Home", "Portfolio", "Attended"];
 
-  // --- Data handling logic (no changes) ---
+  // Data handling logic
   const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
   const avatarUrl = profile.profilePictureUrl;
   const joinedDate = new Date(profile.createdAt).toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -28,7 +28,6 @@ export default function UserProfileHeader({ profile, activeTab, setActiveTab }: 
 
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center p-4 md:p-6">
-      {/* I've cleaned up some minor typos in the class names here for you */}
       <div className="flex flex-col md:flex-row items-center md:items-start w-full gap-4 md:gap-8">
         
         {/* --- Avatar Section (no changes) --- */}
@@ -77,11 +76,11 @@ export default function UserProfileHeader({ profile, activeTab, setActiveTab }: 
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-3 font-semibold border-b-2 transition-colors duration-200
+              className={`px-4 py-3 font-semibold transition-colors duration-200
                 ${
                   activeTab === tab
-                    ? "border-red-600 text-red-600" // ✨ THE FIX IS HERE ✨
-                    : "border-transparent text-muted-foreground hover:text-red-600" // Also updated the hover color
+                    ? "border-b-2 border-primary text-primary" // ✨ THE FIX IS HERE ✨
+                    : "border-transparent text-muted-foreground hover:text-primary" // Also updated the hover color
                 }
               `}
             >

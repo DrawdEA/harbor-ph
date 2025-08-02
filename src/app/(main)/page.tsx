@@ -2,8 +2,24 @@ import RightSidebar from "./RightSidebar";
 import LeftSidebar from "./LeftSidebar";
 import Footer from "./Footer";
 import Feed from "./Feed";
+import { createClient } from "@/lib/supabase/server";
+import { notFound } from "next/navigation";
 
-export default function Home() {
+export default async function Home() {
+	const supabase = await createClient();
+
+	const { data: { user } } = await supabase.auth.getUser()
+
+	const { data: profile, error } = await supabase
+		.from('user_profiles')
+		.select('*')
+		.eq('id', user?.id)
+		.single();
+
+	if (error || !profile) {
+		notFound();
+	}
+
 	return (
 		// The outer div now sets a background color for the whole page
 		<div className="bg-muted/40 min-h-screen">
@@ -31,7 +47,7 @@ export default function Home() {
 					*/}
 					<aside className="hidden lg:block lg:col-span-3 xl:col-span-2">
 						<div className="sticky top-21.5">
-							<LeftSidebar />
+							<LeftSidebar profile={profile} />
 							<Footer />
 						</div>
 					</aside>
