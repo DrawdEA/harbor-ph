@@ -62,12 +62,12 @@ export default function Login() {
 		};
 	}, []);
 
-	// // Redirect if logged in
-	// useEffect(() => {
-	// 	if (session) {
-	// 		redirect("/profile");
-	// 	}
-	// }, [session]);
+	// Redirect if logged in
+	useEffect(() => {
+		if (session) {
+			redirect("/");
+		}
+	}, [session]);
 
 	// Forms
 	const form = useForm<z.infer<typeof formSchema>>({
@@ -84,10 +84,11 @@ export default function Login() {
 		if (error) {
 			console.error("Error signing in: ", error.message);
 			return;
+		} else {
+			console.log("Sign in successful, session will be updated.");
+			redirect("/");
 		}
-		// The onAuthStateChange listener will handle setting the session
-		console.log("Sign in successful, session will be updated.");
-		form.reset(); // Clear form fields after successful submission
+		
 	}
 
 	return (

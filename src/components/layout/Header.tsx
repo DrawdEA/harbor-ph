@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { redirect } from "next/navigation";
+
+import { createClient } from "@/lib/supabase/client";
 
 const navTabs = [
 	{ label: "For You", href: "/" },
@@ -25,7 +28,20 @@ const profileMenuItems = [
 ];
 
 export function Header() {
-	const activeTab = "For You"; // Hardcoded for now
+	const supabase = createClient();
+
+	const handleSignOut = async () => {
+		console.log("HELLO");
+		const { error } = await supabase.auth.signOut();
+		if (error) {
+			console.error(error);
+		} else {
+			console.log("Signed Out");
+			redirect("/auth/login");
+		}
+	}
+
+	const activeTab = "For You";
 
 	const ProfileDropdown = () => (
 		<DropdownMenu>
@@ -60,7 +76,7 @@ export function Header() {
 					</DropdownMenuItem>
 				))}
 				<DropdownMenuSeparator />
-				<DropdownMenuItem className="text-red-600">
+				<DropdownMenuItem  onClick={handleSignOut} className="text-red-600">
 					<LogOut size={16} className="mr-2" />
 					Log Out
 				</DropdownMenuItem>
@@ -105,7 +121,7 @@ export function Header() {
 						</Link>
 					))}
 					<div className="pt-2">
-						<button className="hover:bg-muted flex w-full items-center gap-3 rounded-md p-3 text-sm text-red-600">
+						<button onClick={handleSignOut} className="hover:bg-muted flex w-full items-center gap-3 rounded-md p-3 text-sm text-red-600">
 							<LogOut size={20} />
 							Log Out
 						</button>

@@ -32,9 +32,9 @@ const Profile = ({ profile }: { profile: any }) => {
         </div>
       )}
       
-      <p className="text-lg font-bold mx-auto mt-4">{fullName}</p>
+      <p className="text-lg font-bold mx-auto mt-4">{fullName || "New User"}</p>
       
-      <p className="text-sm text-muted-foreground mx-auto mt-2">{profile.username}</p>
+      <p className="text-sm text-muted-foreground mx-auto">{profile.username}</p>
 
       <Link href={`/${profile.username}`} className="mt-4 block">
         <Button className="w-full" variant="secondary">View Profile</Button>
@@ -64,12 +64,12 @@ const LoginPrompt = () => {
   )
 }
 
-export default function LeftSidebar({ user }: { user: any }) {
-  return (
-    // ✨ THE FIX: Add border-0 and shadow-none to the Card component ✨
+export default function LeftSidebar({ profile }: { profile: any }) {
+  console.log(profile);
+  return ( 
     <Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border p-0 shadow-sm">
-      <CardContent className="p-4 text-center">
-        {user ? <Profile profile={user} /> : <LoginPrompt />}
+      <CardContent className="p-4 text-center break-all">
+        {profile ? <Profile profile={profile} /> : <LoginPrompt />}
       </CardContent>
     </Card>
   );

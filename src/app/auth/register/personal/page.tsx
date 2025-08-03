@@ -17,6 +17,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { redirect } from "next/navigation";
 
 const formSchema = z.object({
 	username: z.string().min(2, {
@@ -70,6 +71,7 @@ export default function Personal() {
 			return;
 		} else {
 			console.log("Registered User");
+			redirect("/");
 		}
 	}
 
