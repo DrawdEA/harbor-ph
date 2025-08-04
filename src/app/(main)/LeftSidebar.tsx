@@ -34,7 +34,7 @@ const Profile = ({ profile }: { profile: any }) => {
       
       <p className="text-lg font-bold mx-auto mt-4">{fullName || "New User"}</p>
       
-      <p className="text-sm text-muted-foreground mx-auto">{profile.username}</p>
+      <p className="text-sm text-muted-foreground mx-auto">{`@${profile.username}`}</p>
 
       <Link href={`/${profile.username}`} className="mt-4 block">
         <Button className="w-full" variant="secondary">View Profile</Button>
@@ -65,6 +65,7 @@ const LoginPrompt = () => {
 }
 
 export default function LeftSidebar({ profile }: { profile: any }) {
+  console.log('any profiles?')
   console.log(profile);
   return ( 
     <Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border p-0 shadow-sm">

@@ -39,16 +39,6 @@ export default function Login() {
 		setSession(currentSession.data.session);
 	}
 
-	// async function handleSignOut() {
-	// 	const { error } = await supabase.auth.signOut();
-	// 	if (error) {
-	// 		console.error(error);
-	// 	} else {
-	// 		console.log("Signed Out");
-	// 		redirect("/login");
-	// 	}
-	// }
-
 	useEffect(() => {
 		fetchSession();
 

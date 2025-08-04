@@ -13,6 +13,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "../ui/button";
+import { ReactElement, JSXElementConstructor, ReactNode, ReactPortal } from "react";
 
 const navTabs = [
 	{ label: "For You", href: "/" },
@@ -27,8 +29,14 @@ const profileMenuItems = [
 	{ label: "Settings", icon: Settings, href: "/settings" },
 ];
 
-export function Header() {
+export async function Header() {
 	const supabase = createClient();
+
+	const { data: { user } } = await supabase.auth.getUser();
+
+	const metadata = user?.user_metadata
+	console.log(metadata);
+	console.log(user);
 
 	const handleSignOut = async () => {
 		console.log("HELLO");
@@ -43,13 +51,30 @@ export function Header() {
 
 	const activeTab = "For You";
 
+	let avatarUrl: string | Blob | undefined;
+	let initials: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined;
+
+	if (metadata) {
+		const fullName = `${metadata.firstName || ''} ${metadata.lastName || ''}`.trim();
+		avatarUrl = "PLACEHOLDER";
+		const getInitials = (name: string): string => {
+		const parts = name.split(' ').filter(Boolean);
+		if (parts.length === 0) return 'U';
+		const firstInitial = parts[0][0];
+		const lastInitial = parts.length > 1 ? parts[parts.length - 1][0] : '';
+		return `${firstInitial}${lastInitial}`.toUpperCase();
+		};
+		initials = getInitials(fullName);
+	}
+	
+
 	const ProfileDropdown = () => (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<div className="hover:bg-muted/50 relative cursor-pointer rounded-md p-1 transition-colors">
 					<Avatar className="h-8 w-8">
-						<AvatarImage src="/placeholder-avatar.jpg" />
-						<AvatarFallback>U</AvatarFallback>
+						<AvatarImage src={avatarUrl} />
+						<AvatarFallback>{initials}</AvatarFallback>
 					</Avatar>
 				</div>
 			</DropdownMenuTrigger>
@@ -57,8 +82,8 @@ export function Header() {
 				<DropdownMenuLabel>
 					<div className="flex items-center gap-2">
 						<Avatar className="h-8 w-8">
-							<AvatarImage src="/placeholder-avatar.jpg" />
-							<AvatarFallback>U</AvatarFallback>
+							<AvatarImage src={avatarUrl} />
+							<AvatarFallback>{initials}</AvatarFallback>
 						</Avatar>
 						<div className="flex flex-col">
 							<span className="text-sm font-medium">Username</span>
@@ -193,12 +218,20 @@ export function Header() {
 						/>
 					</div>
 					<div className="ml-6 flex items-center gap-3">
-						<Link href="/notifications" className="text-foreground hover:text-primary relative">
-							<Bell size={22} />
-							{/* Optional: Add notification badge */}
-							<span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
-						</Link>
-						<ProfileDropdown />
+						
+						{user ? 
+						<>
+							<Link href="/notifications" className="text-foreground hover:text-primary relative">
+								<Bell size={22} />
+								{/* Optional: Add notification badge */}
+								<span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
+							</Link>
+							<ProfileDropdown />
+						</>
+						 : 
+						 <Link href="/auth/login"><Button>Log In</Button></Link>
+						 }
+						
 					</div>
 				</div>
 			</header>
