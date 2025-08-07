@@ -1,0 +1,287 @@
+"use client"
+
+import { Home, User, Search, Settings, LogOut, Trophy, Crown, Bell } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRouter } from "next/navigation";
+
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "../ui/button";
+
+const navTabs = [
+	{ label: "For You", href: "/" },
+	{ label: "People", href: "/people" },
+	{ label: "Events", href: "/events" },
+];
+
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+
+interface HeaderLayoutProps {
+	user: SupabaseUser | null;
+}
+
+export function HeaderLayout({ user }: HeaderLayoutProps) {
+	const router = useRouter();
+	const pathname = usePathname(); 
+
+	const handleSignOut = async () => {
+		const supabase = createClient();
+		const { error } = await supabase.auth.signOut();
+		if (error) {
+			console.error(error);
+		} else {
+			console.log("Signed Out");
+			router.push("/auth/login");
+		}
+	}
+
+	let avatarUrl: string | Blob | undefined;
+	let initials: string | number;
+	let profileMenuItems = [
+		{ label: "View Profile", icon: User, href: "/people" },
+		{ label: "Achievements", icon: Trophy, href: "/achievements" },
+		{ label: "Premium", icon: Crown, href: "/premium" },
+		{ label: "Settings", icon: Settings, href: "/settings" },
+	];
+
+	const metadata = user?.user_metadata
+	if (metadata) {
+		const fullName = `${metadata.firstName || ''} ${metadata.lastName || ''}`.trim();
+		avatarUrl = "PLACEHOLDER";
+		const getInitials = (name: string): string => {
+		const parts = name.split(' ').filter(Boolean);
+		if (parts.length === 0) return 'U';
+		const firstInitial = parts[0][0];
+		const lastInitial = parts.length > 1 ? parts[parts.length - 1][0] : '';
+		return `${firstInitial}${lastInitial}`.toUpperCase();
+		};
+		initials = getInitials(fullName);
+
+		profileMenuItems = [
+			{ label: "View Profile", icon: User, href: `/${metadata.username}` },
+			{ label: "Achievements", icon: Trophy, href: "/achievements" },
+			{ label: "Premium", icon: Crown, href: "/premium" },
+			{ label: "Settings", icon: Settings, href: "/settings" },
+		];
+	}
+	
+
+	const ProfileDropdown = () => (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<div className="hover:bg-muted/50 relative cursor-pointer rounded-md p-1 transition-colors">
+					<Avatar className="h-8 w-8">
+						<AvatarImage src={avatarUrl} />
+						<AvatarFallback>{initials}</AvatarFallback>
+					</Avatar>
+				</div>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-56">
+				<DropdownMenuLabel>
+					<div className="flex items-center gap-2">
+						<Avatar className="h-8 w-8">
+							<AvatarImage src={avatarUrl} />
+							<AvatarFallback>{initials}</AvatarFallback>
+						</Avatar>
+						<div className="flex flex-col flex-1 min-w-0"> {/* Add min-w-0 for flex truncation */}
+							<span className="text-sm font-medium truncate">{user?.user_metadata.username}</span>
+							<span className="text-muted-foreground text-xs truncate">{user?.email}</span>
+						</div>
+					</div>
+				</DropdownMenuLabel>
+				<DropdownMenuSeparator />
+				{profileMenuItems.map((item) => (
+					<DropdownMenuItem key={item.label} asChild>
+						<Link href={item.href} className="flex items-center gap-2">
+							<item.icon size={16} />
+							{item.label}
+						</Link>
+					</DropdownMenuItem>
+				))}
+				<DropdownMenuSeparator />
+				<DropdownMenuItem  onClick={handleSignOut} className="text-primary">
+					<LogOut size={16} className="mr-2" />
+					Log Out
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+
+	const ProfileSheet = () => (
+		<Sheet>
+			<SheetTrigger asChild>
+				<div className="hover:bg-muted/50 relative cursor-pointer rounded-md p-1 transition-colors">
+					<Avatar className="h-8 w-8">
+						<AvatarImage src="/placeholder-avatar.jpg" />
+						<AvatarFallback>U</AvatarFallback>
+					</Avatar>
+				</div>
+			</SheetTrigger>
+			<SheetContent side="right" className="w-80">
+				<SheetHeader>
+					<SheetTitle>
+						<div className="flex items-center gap-3">
+							<Avatar className="h-12 w-12">
+								<AvatarImage src="/placeholder-avatar.jpg" />
+								<AvatarFallback>U</AvatarFallback>
+							</Avatar>
+							<div className="flex flex-col items-start">
+								<span className="font-medium">Username</span>
+								<span className="text-muted-foreground text-sm">user@example.com</span>
+							</div>
+						</div>
+					</SheetTitle>
+				</SheetHeader>
+				<div className="mt-6 space-y-1">
+					{profileMenuItems.map((item) => (
+						<Link
+							key={item.label}
+							href={item.href}
+							className="hover:bg-muted flex items-center gap-3 rounded-md p-3 text-sm"
+						>
+							<item.icon size={20} />
+							{item.label}
+						</Link>
+					))}
+					<div className="pt-2">
+						<button onClick={handleSignOut} className="hover:bg-muted flex w-full items-center gap-3 rounded-md p-3 text-sm text-red-600">
+							<LogOut size={20} />
+							Log Out
+						</button>
+					</div>
+				</div>
+			</SheetContent>
+		</Sheet>
+	);
+
+	return (
+		<>
+			{/* Top Navbar */}
+			<header className="bg-background border-border sticky top-0 z-30 flex w-full flex-col border-b">
+				{/* Mobile: Top row with centered logo, search icon, and profile */}
+				<div className="relative flex items-center justify-center gap-2 px-2 py-2 md:hidden">
+					<Link href="/">
+						<span className="font-raleway text-primary flex-1 text-center text-2xl font-black select-none">
+							Harbor
+						</span>
+					</Link>
+					<div className="absolute right-4 flex items-center gap-3">
+						<button className="text-foreground flex items-center">
+							<Search size={22} />
+						</button>
+						<ProfileSheet />
+					</div>
+				</div>
+				{/* Mobile: Nav tabs row (centered, font weights) */}
+				<nav className="scrollbar-none border-border bg-background flex justify-center gap-2 overflow-x-auto border-b px-2 md:hidden">
+					{navTabs.map((tab) => {
+						// Determine if the current tab is active
+						const isActive = (
+							tab.href === '/'
+							? pathname === '/'
+							: pathname.startsWith(tab.href)
+						);
+
+						return (
+							<Link
+								key={tab.label}
+								href={tab.href}
+								className={
+									`px-2 py-2 text-sm whitespace-nowrap ` +
+									(isActive
+										? "text-primary border-primary border-b-2 font-bold"
+										: "text-foreground hover:text-primary font-medium")
+								}
+							>
+								{tab.label}
+							</Link>
+						);
+					})}
+				</nav>
+				{/* Desktop: All in one row, shorter height */}
+				<div className="hidden items-center gap-6 px-8 py-1.5 md:flex">
+					<Link href="/">
+						<span className="font-raleway text-primary text-2xl font-extrabold select-none">
+							Harbor
+						</span>
+					</Link>
+					<nav className="flex flex-1 gap-4">
+						{navTabs.map((tab) => {
+							// Determine if the current tab is active
+							const isActive = (
+								tab.href === '/'
+								? pathname === '/'
+								: pathname.startsWith(tab.href)
+							);
+
+							return (
+								<Link
+									key={tab.label}
+									href={tab.href}
+									className={
+										`px-2 py-2 text-sm whitespace-nowrap ` +
+										(isActive
+											? "text-primary border-primary border-b-2 font-bold"
+											: "text-foreground hover:text-primary font-medium")
+									}
+								>
+									{tab.label}
+								</Link>
+							);
+						})}
+					</nav>
+					<div className="flex min-w-0 flex-1 items-center justify-end">
+						<input
+							type="text"
+							placeholder="Search events..."
+							className="bg-muted/30 border-border text-foreground focus:ring-primary w-full max-w-xs rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
+						/>
+					</div>
+					<div className="ml-6 flex items-center gap-3">
+						
+						{user ? 
+						<>
+							<Link href="/notifications" className="text-foreground hover:text-primary relative">
+								<Bell size={22} />
+								{/* Optional: Add notification badge */}
+								<span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
+							</Link>
+							<ProfileDropdown />
+						</>
+						 : 
+						 <Link href="/auth/login"><Button>Log In</Button></Link>
+						 }
+						
+					</div>
+				</div>
+			</header>
+			{/* Bottom bar (mobile only) */}
+			<nav className="bg-background border-border fixed right-0 bottom-0 left-0 z-30 flex items-center justify-around border-t py-2 md:hidden">
+				<Link
+					href="/"
+					className="text-foreground hover:text-primary flex flex-col items-center"
+				>
+					<Home size={22} />
+					<span className="text-xs">Home</span>
+				</Link>
+				<Link
+					href="/notifications"
+					className="text-foreground hover:text-primary flex flex-col items-center"
+				>
+					<Bell size={22} />
+					<span className="text-xs">Notifications</span>
+				</Link>
+			</nav>
+		</>
+	);
+}

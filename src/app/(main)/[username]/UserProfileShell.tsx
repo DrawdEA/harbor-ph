@@ -16,7 +16,6 @@ export default function UserProfileShell({ header, homeContent, portfolioContent
       const target = e.target as HTMLElement;
       const tabName = target.innerText;
       if (['Home', 'Portfolio', 'Attended'].includes(tabName)) {
-        console.log(tabName);
         setActiveTab(tabName);
       }
     }}>
