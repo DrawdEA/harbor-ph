@@ -49,8 +49,7 @@ export function HeaderLayout({ user }: HeaderLayoutProps) {
 	let initials: string | number;
 	let profileMenuItems = [
 		{ label: "View Profile", icon: User, href: "/people" },
-		{ label: "Achievements", icon: Trophy, href: "/achievements" },
-		{ label: "Premium", icon: Crown, href: "/premium" },
+		{ label: "Premium", icon: Crown, href: "/coming-soon" },
 		{ label: "Settings", icon: Settings, href: "/settings" },
 	];
 
@@ -69,8 +68,7 @@ export function HeaderLayout({ user }: HeaderLayoutProps) {
 
 		profileMenuItems = [
 			{ label: "View Profile", icon: User, href: `/${metadata.username}` },
-			{ label: "Achievements", icon: Trophy, href: "/achievements" },
-			{ label: "Premium", icon: Crown, href: "/premium" },
+			{ label: "Premium", icon: Crown, href: "/coming-soon" },
 			{ label: "Settings", icon: Settings, href: "/settings" },
 		];
 	}
