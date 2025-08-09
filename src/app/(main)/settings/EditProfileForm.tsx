@@ -59,6 +59,16 @@ export default function EditProfileForm({ profile, onClose }: EditProfileFormPro
     },
   });
 
+  // Function to refresh the header
+  const refreshHeader = () => {
+    if (typeof window !== 'undefined') {
+      const win = window as Window & { refreshHeader?: () => void };
+      if (win.refreshHeader) {
+        win.refreshHeader();
+      }
+    }
+  };
+
   const onSubmit = async (data: ProfileFormData) => {
     setIsLoading(true);
     setError(null);
@@ -102,12 +112,15 @@ export default function EditProfileForm({ profile, onClose }: EditProfileFormPro
       }
 
       setSuccess(true);
+      // Refresh the header to show updated user data
+      refreshHeader();
       setTimeout(() => {
         onClose(); // This will trigger the refresh in the parent component
       }, 1500);
 
-    } catch (err: any) {
-      setError(err.message || "Failed to update profile");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update profile";
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

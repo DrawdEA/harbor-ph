@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, User, Search, Settings, LogOut, Trophy, Crown, Bell } from "lucide-react";
+import { Home, User, Search, Settings, LogOut, Crown, Bell } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,6 +14,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "../ui/button";
@@ -30,9 +31,25 @@ interface HeaderLayoutProps {
 	user: SupabaseUser | null;
 }
 
-export function HeaderLayout({ user }: HeaderLayoutProps) {
+export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 	const router = useRouter();
-	const pathname = usePathname(); 
+	const pathname = usePathname();
+	const [user, setUser] = useState<SupabaseUser | null>(initialUser);
+
+	// Function to refresh user data
+	const refreshUserData = async () => {
+		const supabase = createClient();
+		const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+		setUser(refreshedUser);
+	};
+
+	// Expose refresh function globally so it can be called from settings
+	useEffect(() => {
+		(window as any).refreshHeader = refreshUserData;
+		return () => {
+			delete (window as any).refreshHeader;
+		};
+	}, [refreshUserData]);
 
 	const handleSignOut = async () => {
 		const supabase = createClient();
@@ -56,7 +73,7 @@ export function HeaderLayout({ user }: HeaderLayoutProps) {
 	const metadata = user?.user_metadata
 	if (metadata) {
 		const fullName = `${metadata.firstName || ''} ${metadata.lastName || ''}`.trim();
-		avatarUrl = "PLACEHOLDER";
+		avatarUrl = metadata.profilePictureUrl || "PLACEHOLDER";
 		const getInitials = (name: string): string => {
 		const parts = name.split(' ').filter(Boolean);
 		if (parts.length === 0) return 'U';
@@ -218,8 +235,8 @@ export function HeaderLayout({ user }: HeaderLayoutProps) {
 							// Determine if the current tab is active
 							const isActive = (
 								tab.href === '/'
-								? pathname === '/'
-								: pathname.startsWith(tab.href)
+									? pathname === '/'
+									: pathname.startsWith(tab.href)
 							);
 
 							return (

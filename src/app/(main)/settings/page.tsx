@@ -8,6 +8,7 @@ import { Edit, User, Shield, Bell, Key } from "lucide-react";
 import { useState, useEffect } from "react";
 import { UserProfile } from "@/types";
 import EditProfileForm from "./EditProfileForm";
+import ProfilePictureUpload from "./ProfilePictureUpload";
 import Link from "next/link";
 
 export default function SettingsPage() {
@@ -34,6 +35,16 @@ export default function SettingsPage() {
     setIsLoading(false);
   };
 
+  // Function to refresh the header
+  const refreshHeader = () => {
+    if (typeof window !== 'undefined') {
+      const win = window as Window & { refreshHeader?: () => void };
+      if (win.refreshHeader) {
+        win.refreshHeader();
+      }
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -42,6 +53,19 @@ export default function SettingsPage() {
     setShowEditForm(false);
     // Refresh the profile data when the edit form is closed
     fetchProfile();
+    // Refresh the header to show updated user data
+    refreshHeader();
+  };
+
+  const handleProfilePictureUpdate = (newUrl: string | null) => {
+    if (profile) {
+      setProfile({
+        ...profile,
+        profilePictureUrl: newUrl
+      });
+    }
+    // Refresh the header to show updated profile picture
+    refreshHeader();
   };
 
   if (isLoading) {
@@ -73,6 +97,8 @@ export default function SettingsPage() {
       </div>
     );
   }
+
+  const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
 
   return (
     <div className="bg-muted/40 min-h-screen">
@@ -134,6 +160,13 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Profile Picture Upload Card */}
+          <ProfilePictureUpload
+            currentProfilePictureUrl={profile.profilePictureUrl}
+            fullName={fullName}
+            onUpdate={handleProfilePictureUpdate}
+          />
 
           {/* Account Security Card */}
           <Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border shadow-sm">
