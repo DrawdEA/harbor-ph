@@ -229,13 +229,15 @@ export default function ProfilePictureUpload({
         <div className="flex items-center gap-6">
           <div className="relative">
             {previewUrl ? (
-              <Image
-                src={previewUrl}
-                alt={`${fullName}'s profile picture`}
-                width={100}
-                height={100}
-                className="rounded-full object-cover border-2 border-muted"
-              />
+              <div className="w-[100px] h-[100px] rounded-full overflow-hidden border-2 border-muted">
+                <Image
+                  src={previewUrl}
+                  alt={`${fullName}'s profile picture`}
+                  width={100}
+                  height={100}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             ) : (
               <div className="w-[100px] h-[100px] rounded-full bg-muted flex items-center justify-center border-2 border-muted">
                 <User className="w-12 h-12 text-muted-foreground" />
@@ -270,7 +272,7 @@ export default function ProfilePictureUpload({
             <div className="flex gap-3">
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 onClick={() => fileInputRef.current?.click()}
                 className="flex items-center gap-2"
               >
@@ -306,7 +308,7 @@ export default function ProfilePictureUpload({
               </Button>
               
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={handleCancel}
                 disabled={isUploading}
               >

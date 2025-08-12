@@ -58,13 +58,15 @@ export default function UserProfileHeader({ profile, activeTab, setActiveTab }: 
         {/* --- Avatar Section --- */}
         <div className="relative flex-shrink-0">
           {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={`${fullName || 'User'}'s avatar`}
-              width={120}
-              height={120}
-              className="rounded-full object-cover border-4 border-background bg-gray-300"
-            />
+            <div className="w-[120px] h-[120px] rounded-full overflow-hidden border-4 border-background bg-gray-300">
+              <Image
+                src={avatarUrl}
+                alt={`${fullName || 'User'}'s avatar`}
+                width={120}
+                height={120}
+                className="w-full h-full object-cover"
+              />
+            </div>
           ) : (
             <div className="w-[120px] h-[120px] rounded-full bg-muted flex items-center justify-center border-4 border-background">
               <span className="text-4xl font-bold text-muted-foreground">{initials}</span>

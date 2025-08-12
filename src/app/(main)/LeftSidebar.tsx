@@ -19,15 +19,17 @@ const Profile = ({ profile }: { profile: any }) => {
   return (
     <>
       {avatarUrl ? (
-        <Image
-          src={avatarUrl}
-          alt={`${fullName || 'User'}'s avatar`}
-          width={120}
-          height={120}
-          className="rounded-full object-cover border-4 mx-auto border-background bg-gray-300"
-        />
+        <div className="w-[100px] h-[100px] rounded-full overflow-hidden border-4 mx-auto border-background bg-gray-300 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <Image
+            src={avatarUrl}
+            alt={`${fullName || 'User'}'s avatar`}
+            width={100}
+            height={100}
+            className="w-full h-full object-cover"
+          />
+        </div>
       ) : (
-        <div className="w-[100px] h-[100px] mx-auto rounded-full bg-muted flex items-center justify-center border-4 border-background">
+        <div className="w-[100px] h-[100px] mx-auto rounded-full bg-muted flex items-center justify-center border-4 border-background shadow-lg hover:shadow-xl transition-shadow duration-300">
           <span className="text-4xl  font-bold text-muted-foreground">{initials}</span>
         </div>
       )}
@@ -37,7 +39,7 @@ const Profile = ({ profile }: { profile: any }) => {
       <p className="text-sm text-muted-foreground mx-auto">{`@${profile.username}`}</p>
 
       <Link href={`/${profile.username}`} className="mt-4 block">
-        <Button className="w-full" variant="secondary">View Profile</Button>
+        <Button className="w-full shadow-md hover:shadow-lg transition-shadow duration-300" variant="secondary">View Profile</Button>
       </Link>
     </>
   )
@@ -68,7 +70,7 @@ export default function LeftSidebar({ profile }: { profile: any }) {
   console.log('any profiles?')
   console.log(profile);
   return ( 
-    <Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border p-0 shadow-sm">
+    <Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border p-0 pt-4 shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardContent className="p-4 text-center break-all">
         {profile ? <Profile profile={profile} /> : <LoginPrompt />}
       </CardContent>
