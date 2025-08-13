@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import UserProfileHeader from "./UserProfileHeader";
+import { UserProfile } from "@/types";
 
 interface UserProfileShellProps {
   header: React.ReactNode;
@@ -11,21 +13,17 @@ interface UserProfileShellProps {
 export default function UserProfileShell({ header, homeContent, portfolioContent }: UserProfileShellProps) {
   const [activeTab, setActiveTab] = useState("Home");
 
-  const headerWithState = (
-    <div onClick={(e) => {
-      const target = e.target as HTMLElement;
-      const tabName = target.innerText;
-      if (['Home', 'Portfolio', 'Attended'].includes(tabName)) {
-        setActiveTab(tabName);
-      }
-    }}>
-      {header}
-    </div>
-  );
+  // Extract the profile from the header prop
+  const headerElement = header as React.ReactElement<{ profile: UserProfile }>;
+  const profile = headerElement.props.profile;
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      {headerWithState}
+      <UserProfileHeader 
+        profile={profile} 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+      />
 
       <main>
         {activeTab === 'Home' && homeContent}

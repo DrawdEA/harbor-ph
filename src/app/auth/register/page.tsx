@@ -10,13 +10,13 @@ export default function Register() {
 					<br />
 					Create an account.
 				</div>
-				<Link href="/register/personal" className="w-9/10">
+				<Link href="/auth/register/personal" className="w-9/10">
 					<Button className="mb-2 w-full" variant="black">
 						Personal
 					</Button>
 				</Link>
 				<span className="text-muted-foreground mb-2">or</span>
-				<Link href="/register/organization" className="w-9/10">
+				<Link href="/auth/register/organization" className="w-9/10">
 					<Button className="w-full">
 						Organization
 					</Button>

@@ -39,16 +39,6 @@ export default function Login() {
 		setSession(currentSession.data.session);
 	}
 
-	// async function handleSignOut() {
-	// 	const { error } = await supabase.auth.signOut();
-	// 	if (error) {
-	// 		console.error(error);
-	// 	} else {
-	// 		console.log("Signed Out");
-	// 		redirect("/login");
-	// 	}
-	// }
-
 	useEffect(() => {
 		fetchSession();
 
@@ -65,7 +55,7 @@ export default function Login() {
 	// Redirect if logged in
 	useEffect(() => {
 		if (session) {
-			redirect("/profile");
+			redirect("/");
 		}
 	}, [session]);
 
@@ -84,10 +74,11 @@ export default function Login() {
 		if (error) {
 			console.error("Error signing in: ", error.message);
 			return;
+		} else {
+			console.log("Sign in successful, session will be updated.");
+			redirect("/");
 		}
-		// The onAuthStateChange listener will handle setting the session
-		console.log("Sign in successful, session will be updated.");
-		form.reset(); // Clear form fields after successful submission
+		
 	}
 
 	return (

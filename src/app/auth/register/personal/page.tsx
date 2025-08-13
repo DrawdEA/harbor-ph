@@ -17,6 +17,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { redirect } from "next/navigation";
 
 const formSchema = z.object({
 	username: z.string().min(2, {
@@ -52,6 +53,13 @@ export default function Personal() {
 		fetchSession();
 	}, []);
 
+	// Redirect if logged in
+	useEffect(() => {
+		if (session) {
+			redirect("/");
+		}
+	}, [session]);
+
 	// Forms
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -63,13 +71,22 @@ export default function Personal() {
 		const { error } = await supabase.auth.signUp({
 			email: values.email,
 			password: values.password,
+			options: {
+				data: {
+					username: values.username,
+					firstName: values.firstName,
+					lastName: values.lastName
+				},
+			}
 		});
 
 		if (error) {
 			console.error("Error registration: ", error.message);
+			console.log("not so sigma")
 			return;
 		} else {
 			console.log("Registered User");
+			redirect("/");
 		}
 	}
 
