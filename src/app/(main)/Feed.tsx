@@ -4,7 +4,7 @@
 
 import React, { useRef, useEffect } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { EventCard } from "@/components/event/EventCard";
+import EventCard from "@/components/event/EventCard";
 import { fetchEvents } from "@/lib/event-query";
 import { EventCardSkeleton } from "@/components/event/EventCardSkeleton"; // --- UPDATED IMPORT ---
 

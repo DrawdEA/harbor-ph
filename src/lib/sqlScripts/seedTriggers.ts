@@ -1,10 +1,13 @@
 /**
- * Automates the creation of a user profile in the public schema.
+ * Automates the creation of user or organization profiles in the public schema.
  *
  * This script sets up a PostgreSQL trigger and function to synchronize new user
- * sign-ups from Supabase's `auth.users` table to a public-facing
- * `public.user_profiles` table. This ensures that every authenticated user
- * has a corresponding profile record from the moment they are created.
+ * sign-ups from Supabase's `auth.users` table to the appropriate profile table:
+ * - Personal accounts (accountType = "personal" or missing) → user_profiles
+ * - Organization accounts (accountType = "organization") → organization_profiles
+ * 
+ * This ensures that every authenticated user has a corresponding profile record
+ * in the correct table from the moment they are created.
  * 
  * https://supabase.com/docs/guides/auth/managing-user-data
  */
@@ -25,28 +28,59 @@ async function main() {
 	await sql`
     CREATE OR REPLACE FUNCTION public.handle_new_user()
     RETURNS TRIGGER AS $$
+    DECLARE
+      account_type TEXT;
     BEGIN
-      INSERT INTO public.user_profiles (
-        id,
-        email,
-        phone,
-        username,
-        "firstName",
-        "lastName",
-        "createdAt", 
-        "updatedAt" 
-      )
-      VALUES (
-        new.id,
-        new.email,
-        new.phone,
-        COALESCE(new.raw_user_meta_data ->> 'username', new.email, new.phone),
-        new.raw_user_meta_data ->> 'firstName',
-        new.raw_user_meta_data ->> 'lastName',
-        NOW(), 
-        NOW() 
-      );
-      RETURN new;
+      -- Extract account type from metadata, default to 'personal'
+      account_type := COALESCE(NEW.raw_user_meta_data ->> 'accountType', 'personal');
+      
+      IF account_type = 'organization' THEN
+        -- Create organization profile
+        INSERT INTO public.organization_profiles (
+          id,
+          name,
+          description,
+          "contactEmail",
+          "contactNumber",
+          "websiteUrl",
+          "createdAt", 
+          "updatedAt" 
+        )
+        VALUES (
+          NEW.id,
+          NEW.raw_user_meta_data ->> 'organizationName',
+          NEW.raw_user_meta_data ->> 'organizationDescription',
+          NEW.raw_user_meta_data ->> 'contactEmail',
+          NEW.raw_user_meta_data ->> 'contactNumber',
+          NEW.raw_user_meta_data ->> 'websiteUrl',
+          NOW(), 
+          NOW() 
+        );
+      ELSE
+        -- Create user profile (personal account)
+        INSERT INTO public.user_profiles (
+          id,
+          email,
+          phone,
+          username,
+          "firstName",
+          "lastName",
+          "createdAt", 
+          "updatedAt" 
+        )
+        VALUES (
+          NEW.id,
+          NEW.email,
+          NEW.phone,
+          COALESCE(NEW.raw_user_meta_data ->> 'username', NEW.email, NEW.phone),
+          NEW.raw_user_meta_data ->> 'firstName',
+          NEW.raw_user_meta_data ->> 'lastName',
+          NOW(), 
+          NOW() 
+        );
+      END IF;
+      
+      RETURN NEW;
     END;
     $$ LANGUAGE plpgsql SECURITY DEFINER;
   `;
