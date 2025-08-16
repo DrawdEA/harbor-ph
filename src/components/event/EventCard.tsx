@@ -1,4 +1,5 @@
-import { MapPin, Clock, Users, Image as ImageIcon } from "lucide-react";
+import { MapPin, Clock, Users, Image as ImageIcon, Expand, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Simple type for Feed EventCard, accommodating both mock and real data structures
 export type FeedEventCardData = {
@@ -32,9 +33,16 @@ export type FeedEventCardData = {
 
 interface FeedEventCardProps {
   event: FeedEventCardData;
+  onExpand?: (event: FeedEventCardData) => void;
 }
 
-export default function EventCard({ event }: FeedEventCardProps) {
+export default function EventCard({ event, onExpand }: FeedEventCardProps) {
+  // Safety check - if event is undefined or null, don't render
+  if (!event) {
+    console.warn('EventCard received undefined/null event');
+    return null;
+  }
+
   // Handle both data structures (mock data vs real data)
   const title = event.title || event.eventName || 'Event';
   const description = event.description || event.eventType || 'No description available';
@@ -45,6 +53,36 @@ export default function EventCard({ event }: FeedEventCardProps) {
   const hasRealData = event.startTime && event.endTime;
   const hasMockData = event.date && event.time;
   
+  // Format dates safely
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (error) {
+      console.warn('Invalid date string:', dateString);
+      return 'Date TBA';
+    }
+  };
+
+  // Get minimum ticket price safely
+  const getMinTicketPrice = () => {
+    if (!event.ticket_types || event.ticket_types.length === 0) return null;
+    try {
+      const prices = event.ticket_types.map(t => t.price).filter(p => typeof p === 'number' && !isNaN(p));
+      return prices.length > 0 ? Math.min(...prices) : null;
+    } catch (error) {
+      console.warn('Error calculating ticket price:', error);
+      return null;
+    }
+  };
+
+  const minTicketPrice = getMinTicketPrice();
+
+  const handleExpand = () => {
+    if (onExpand) {
+      onExpand(event);
+    }
+  };
+  
   return (
     <div className="flex flex-col space-y-3 rounded-lg bg-white p-4 shadow-sm">
       {/* Image */}
@@ -53,6 +91,10 @@ export default function EventCard({ event }: FeedEventCardProps) {
           src={imageUrl} 
           alt={imageAlt}
           className="h-40 w-full rounded-lg object-cover"
+          onError={(e) => {
+            console.warn('Failed to load image:', imageUrl);
+            // You could set a fallback image here if needed
+          }}
         />
       ) : (
         <div className="h-40 w-full rounded-lg bg-muted flex items-center justify-center">
@@ -60,7 +102,7 @@ export default function EventCard({ event }: FeedEventCardProps) {
         </div>
       )}
       
-      <div className="space-y-2">
+      <div className="space-y-3">
         {/* Event Title */}
         <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         
@@ -74,7 +116,7 @@ export default function EventCard({ event }: FeedEventCardProps) {
             <Clock className="h-4 w-4" />
             <span>
               {hasRealData ? (
-                `${new Date(event.startTime!).toLocaleDateString()} - ${new Date(event.endTime!).toLocaleDateString()}`
+                `${formatDate(event.startTime!)} - ${formatDate(event.endTime!)}`
               ) : hasMockData ? (
                 `${event.date} - ${event.time}`
               ) : (
@@ -84,7 +126,7 @@ export default function EventCard({ event }: FeedEventCardProps) {
           </div>
           
           {/* Venue - Only show for real data */}
-          {event.venues && event.venues.length > 0 && (
+          {event.venues && event.venues.length > 0 && event.venues[0]?.city && (
             <div className="flex items-center space-x-1">
               <MapPin className="h-4 w-4" />
               <span>{event.venues[0].city}</span>
@@ -100,15 +142,15 @@ export default function EventCard({ event }: FeedEventCardProps) {
           )}
           
           {/* Ticket types - Only show for real data */}
-          {event.ticket_types && event.ticket_types.length > 0 && (
+          {minTicketPrice !== null && (
             <div className="flex items-center space-x-1">
               <Users className="h-4 w-4" />
-              <span>From ${Math.min(...event.ticket_types.map(t => t.price))}</span>
+              <span>From ${minTicketPrice}</span>
             </div>
           )}
         </div>
         
-        {/* Status Badge - Handle both data structures */}
+        {/* Status Badge and Expand Button */}
         <div className="flex justify-between items-center">
           {event.status ? (
             <span className={`px-2 py-1 text-xs rounded-full ${
@@ -127,6 +169,17 @@ export default function EventCard({ event }: FeedEventCardProps) {
               {event.isLive ? 'LIVE' : 'UPCOMING'}
             </span>
           ) : null}
+
+          {/* Expand Button */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleExpand}
+            className="flex items-center gap-2 text-xs"
+          >
+            <Expand className="h-3 w-3" />
+            View Details
+          </Button>
         </div>
       </div>
     </div>
