@@ -79,7 +79,7 @@ export default async function DashboardPage() {
 								Create New Event
 							</Link>
 						</Button>
-						<Button variant="outline" className="w-full" asChild>
+						<Button variant="black" className="w-full" asChild>
 							<Link href="/dashboard/events">
 								<Calendar className="mr-2 h-4 w-4" />
 								View All Events

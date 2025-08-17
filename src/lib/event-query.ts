@@ -17,12 +17,17 @@ export interface Event {
 		city: string;
 		province: string;
 		country: string;
-	} | null;
+		address?: string;
+		postalCode?: string;
+	}[] | null;
 	ticket_types: Array<{
+		id?: string;
 		name: string;
 		price: number;
 		quantity: number;
 		availableQuantity: number;
+		salesStartDate?: string;
+		salesEndDate?: string;
 	}> | null;
 }
 
@@ -149,6 +154,18 @@ export const fetchEventById = async (eventId: string) => {
 		if (error) {
 			console.error('Error fetching event by ID:', error);
 			throw error;
+		}
+
+		// Transform the data to match the expected structure
+		// venues should be an array, but Supabase returns it as a single object
+		// due to the relationship structure
+		if (event && event.venues) {
+			// Create a new event object with the transformed venues structure
+			const transformedEvent = {
+				...event,
+				venues: [event.venues]
+			};
+			return transformedEvent;
 		}
 
 		return event;
