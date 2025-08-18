@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, User, Search, Settings, LogOut, Crown, Bell } from "lucide-react";
+import { Home, User, Search, Settings, LogOut, Crown, Bell, Building2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -45,9 +45,9 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 
 	// Expose refresh function globally so it can be called from settings
 	useEffect(() => {
-		(window as any).refreshHeader = refreshUserData;
+		(window as Window & { refreshHeader?: () => void }).refreshHeader = refreshUserData;
 		return () => {
-			delete (window as any).refreshHeader;
+			delete (window as Window & { refreshHeader?: () => void }).refreshHeader;
 		};
 	}, [refreshUserData]);
 
@@ -70,7 +70,9 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 		{ label: "Settings", icon: Settings, href: "/settings" },
 	];
 
-	const metadata = user?.user_metadata
+	const metadata = user?.user_metadata;
+	const isOrganization = metadata?.accountType === 'organization';
+	
 	if (metadata) {
 		const fullName = `${metadata.firstName || ''} ${metadata.lastName || ''}`.trim();
 		avatarUrl = metadata.profilePictureUrl || "PLACEHOLDER";
@@ -194,7 +196,23 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 						<button className="text-foreground flex items-center">
 							<Search size={22} />
 						</button>
-						<ProfileSheet />
+						{user ? (
+							isOrganization ? (
+								// Organization users see Dashboard button
+								<Link href="/dashboard">
+									<Button variant="default" size="sm" className="flex items-center gap-1 px-2 py-1">
+										<Building2 size={16} />
+										<span className="text-xs">Dashboard</span>
+									</Button>
+								</Link>
+							) : (
+								// Personal users see profile sheet
+								<ProfileSheet />
+							)
+						) : (
+							// Unauthenticated users - show nothing extra in mobile
+							null
+						)}
 					</div>
 				</div>
 				{/* Mobile: Nav tabs row (centered, font weights) */}
@@ -263,20 +281,32 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 						/>
 					</div>
 					<div className="ml-6 flex items-center gap-3">
-						
-						{user ? 
-						<>
-							<Link href="/notifications" className="text-foreground hover:text-primary relative">
-								<Bell size={22} />
-								{/* Optional: Add notification badge */}
-								<span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
+						{user ? (
+							isOrganization ? (
+								// Organization users see Dashboard button
+								<Link href="/dashboard">
+									<Button variant="default" className="flex items-center gap-2">
+										<Building2 size={18} />
+										Dashboard
+									</Button>
+								</Link>
+							) : (
+								// Personal users see notifications and profile
+								<>
+									<Link href="/notifications" className="text-foreground hover:text-primary relative">
+										<Bell size={22} />
+										{/* Optional: Add notification badge */}
+										<span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
+									</Link>
+									<ProfileDropdown />
+								</>
+							)
+						) : (
+							// Unauthenticated users see Log In button
+							<Link href="/auth/login">
+								<Button>Log In</Button>
 							</Link>
-							<ProfileDropdown />
-						</>
-						 : 
-						 <Link href="/auth/login"><Button>Log In</Button></Link>
-						 }
-						
+						)}
 					</div>
 				</div>
 			</header>
