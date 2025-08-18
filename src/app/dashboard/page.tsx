@@ -1,8 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { Plus, BarChart3, Users, Calendar, TrendingUp, TrendingDown } from "lucide-react";
+import Link from "next/link";
+import { SectionCards } from "@/components/section-cards";
+import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, BarChart3, Users, Calendar } from "lucide-react";
-import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export default async function DashboardPage() {
 	const supabase = await createClient();
@@ -15,8 +18,21 @@ export default async function DashboardPage() {
 		.eq('id', user?.id)
 		.single();
 
+	// Fetch real event stats (you can expand this with actual queries)
+	const { data: events } = await supabase
+		.from('events')
+		.select('*')
+		.eq('organizationId', user?.id);
+
+	const totalEvents = events?.length || 0;
+	const activeEvents = events?.filter(event => event.status === 'PUBLISHED').length || 0;
+	
+	// Mock data for demonstration - replace with real data later
+	const totalAttendees = 1250;
+	const revenueGrowth = 12.5;
+
 	return (
-		<div className="space-y-6 bg-muted/40 p-6">
+		<div className="@container/main min-h-screen space-y-6 p-6">
 			{/* Welcome Header */}
 			<div>
 				<h1 className="text-3xl font-bold tracking-tight">
@@ -27,45 +43,108 @@ export default async function DashboardPage() {
 				</p>
 			</div>
 
-			{/* Quick Stats */}
-			<div className="grid gap-4 md:grid-cols-3">
-				<Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border shadow-sm">
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Total Events</CardTitle>
-						<Calendar className="h-4 w-4 text-muted-foreground" />
+			{/* Enhanced Stats Cards using shadcn pattern */}
+			<div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+				<Card className="@container/card">
+					<CardHeader>
+						<CardDescription>Total Events</CardDescription>
+						<CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+							{totalEvents}
+						</CardTitle>
+						<div className="flex items-center gap-2">
+							<Badge variant="outline" className="flex items-center gap-1">
+								<TrendingUp className="h-3 w-3" />
+								+{totalEvents > 0 ? '100' : '0'}%
+							</Badge>
+						</div>
 					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">0</div>
-						<p className="text-xs text-muted-foreground">Events created</p>
+					<CardContent className="flex-col items-start gap-1.5 text-sm">
+						<div className="line-clamp-1 flex gap-2 font-medium">
+							Events created <Calendar className="size-4" />
+						</div>
+						<div className="text-muted-foreground">
+							Total events in your organization
+						</div>
 					</CardContent>
 				</Card>
-				
-				<Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border shadow-sm">
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Active Events</CardTitle>
-						<BarChart3 className="h-4 w-4 text-muted-foreground" />
+
+				<Card className="@container/card">
+					<CardHeader>
+						<CardDescription>Active Events</CardDescription>
+						<CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+							{activeEvents}
+						</CardTitle>
+						<div className="flex items-center gap-2">
+							<Badge variant="outline" className="flex items-center gap-1">
+								<TrendingUp className="h-3 w-3" />
+								+{activeEvents > 0 ? Math.round((activeEvents / totalEvents) * 100) : 0}%
+							</Badge>
+						</div>
 					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">0</div>
-						<p className="text-xs text-muted-foreground">Currently running</p>
+					<CardContent className="flex-col items-start gap-1.5 text-sm">
+						<div className="line-clamp-1 flex gap-2 font-medium">
+							Currently running <BarChart3 className="size-4" />
+						</div>
+						<div className="text-muted-foreground">
+							Live events accepting registrations
+						</div>
 					</CardContent>
 				</Card>
-				
-				<Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border shadow-sm">
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Total Attendees</CardTitle>
-						<Users className="h-4 w-4 text-muted-foreground" />
+
+				<Card className="@container/card">
+					<CardHeader>
+						<CardDescription>Total Attendees</CardDescription>
+						<CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+							{totalAttendees.toLocaleString()}
+						</CardTitle>
+						<div className="flex items-center gap-2">
+							<Badge variant="outline" className="flex items-center gap-1">
+								<TrendingUp className="h-3 w-3" />
+								+15.3%
+							</Badge>
+						</div>
 					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">0</div>
-						<p className="text-xs text-muted-foreground">Across all events</p>
+					<CardContent className="flex-col items-start gap-1.5 text-sm">
+						<div className="line-clamp-1 flex gap-2 font-medium">
+							Strong engagement <Users className="size-4" />
+						</div>
+						<div className="text-muted-foreground">
+							Across all events
+						</div>
+					</CardContent>
+				</Card>
+
+				<Card className="@container/card">
+					<CardHeader>
+						<CardDescription>Revenue Growth</CardDescription>
+						<CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+							{revenueGrowth}%
+						</CardTitle>
+						<div className="flex items-center gap-2">
+							<Badge variant="outline" className="flex items-center gap-1">
+								<TrendingUp className="h-3 w-3" />
+								+{revenueGrowth}%
+							</Badge>
+						</div>
+					</CardHeader>
+					<CardContent className="flex-col items-start gap-1.5 text-sm">
+						<div className="line-clamp-1 flex gap-2 font-medium">
+							Steady performance increase <TrendingUp className="size-4" />
+						</div>
+						<div className="text-muted-foreground">
+							Month over month growth
+						</div>
 					</CardContent>
 				</Card>
 			</div>
 
-			{/* Quick Actions */}
-			<div className="grid gap-6 md:grid-cols-2">
-				<Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border shadow-sm">
+			{/* Chart Section */}
+			<div className="grid gap-6 @5xl/main:grid-cols-2">
+				{/* Interactive Chart */}
+				<ChartAreaInteractive />
+				
+				{/* Quick Actions Card */}
+				<Card className="@container/card">
 					<CardHeader>
 						<CardTitle>Event Management</CardTitle>
 						<CardDescription>
@@ -79,40 +158,33 @@ export default async function DashboardPage() {
 								Create New Event
 							</Link>
 						</Button>
-						<Button variant="black" className="w-full" asChild>
+						<Button variant="outline" className="w-full" asChild>
 							<Link href="/dashboard/events">
 								<Calendar className="mr-2 h-4 w-4" />
 								View All Events
 							</Link>
 						</Button>
-					</CardContent>
-				</Card>
-				
-				<Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border shadow-sm">
-					<CardHeader>
-						<CardTitle>Recent Activity</CardTitle>
-						<CardDescription>
-							Latest updates on your events
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="text-center py-6 text-muted-foreground">
-							<Calendar className="mx-auto h-12 w-12 mb-2 opacity-50" />
-							<p>No recent activity</p>
-							<p className="text-sm">Create your first event to get started!</p>
-						</div>
+						<Button variant="outline" className="w-full" asChild>
+							<Link href="/dashboard/settings">
+								<BarChart3 className="mr-2 h-4 w-4" />
+								Analytics
+							</Link>
+						</Button>
 					</CardContent>
 				</Card>
 			</div>
 
 			{/* Organization Info */}
 			{orgProfile && (
-				<Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border shadow-sm">
+				<Card className="@container/card">
 					<CardHeader>
 						<CardTitle>Organization Details</CardTitle>
+						<CardDescription>
+							Your organization information and settings
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="grid gap-4 md:grid-cols-2">
+						<div className="grid gap-4 @2xl/card:grid-cols-2">
 							<div>
 								<p className="text-sm font-medium">Description</p>
 								<p className="text-sm text-muted-foreground">
