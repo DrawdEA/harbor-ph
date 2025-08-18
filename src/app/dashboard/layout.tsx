@@ -17,11 +17,11 @@ export default async function DashboardLayout({
 		redirect("/auth/login");
 	}
 
-	// Check if user is an organization
-	const accountType = user.user_metadata?.accountType;
-	if (accountType !== "organization") {
-		redirect("/"); // Redirect personal users to main feed
-	}
+	// // Check if user is an organization
+	// const accountType = user.user_metadata?.accountType;
+	// if (accountType !== "organization") {
+	// 	redirect("/"); // Redirect personal users to main feed
+	// }
 
 	// Fetch organization profile for sidebar
 	const { data: orgProfile } = await supabase

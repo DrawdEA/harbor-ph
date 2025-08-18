@@ -1,7 +1,6 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, User, Shield, Bell, Key } from "lucide-react";
@@ -20,9 +19,10 @@ export default function SettingsPage() {
     const supabase = createClient();
     
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
-      redirect("/auth/login");
+      console.log('No user found in settings page');
+      return;
     }
 
     const { data: profileData } = await supabase
