@@ -29,6 +29,12 @@ export interface Event {
 		salesStartDate?: string;
 		salesEndDate?: string;
 	}> | null;
+	categories_on_events?: Array<{
+		categories: {
+			id: string;
+			name: string;
+		} | null;
+	}> | null;
 }
 
 // This function fetches real events from Supabase
@@ -44,7 +50,7 @@ export const fetchEvents = async ({ pageParam = 0 }: { pageParam?: number }) => 
 		const pageSize = 6; // Return 6 events per "page"
 		const start = pageParam;
 		
-		// Fetch events with venue and ticket information
+		// Fetch events with venue, ticket, and category information
 		// Temporarily removing filters for testing - will add back once we confirm data structure
 		const { data: eventsData, error } = await supabase
 			.from('events')
@@ -70,6 +76,12 @@ export const fetchEvents = async ({ pageParam = 0 }: { pageParam?: number }) => 
 					price,
 					quantity,
 					availableQuantity
+				),
+				categories_on_events (
+					categories (
+						id,
+						name
+					)
 				)
 			`)
 			// .eq('status', 'PUBLISHED') // Temporarily commented out for testing
@@ -146,6 +158,12 @@ export const fetchEventById = async (eventId: string) => {
 					availableQuantity,
 					salesStartDate,
 					salesEndDate
+				),
+				categories_on_events (
+					categories (
+						id,
+						name
+					)
 				)
 			`)
 			.eq('id', eventId)

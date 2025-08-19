@@ -54,6 +54,12 @@ export default function EventsPage() {
 					ticket_types (
 						name,
 						price
+					),
+					categories_on_events (
+						categories (
+							id,
+							name
+						)
 					)
 				`)
 				.eq('organizerId', orgProfile.id)

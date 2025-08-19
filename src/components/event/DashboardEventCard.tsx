@@ -23,6 +23,12 @@ export type DashboardEventCardData = {
 		name: string;
 		price: number;
 	}> | null;
+	categories_on_events?: Array<{
+		categories: {
+			id: string;
+			name: string;
+		};
+	}> | null;
 };
 
 interface DashboardEventCardProps {
@@ -147,6 +153,21 @@ export default function DashboardEventCard({ event, onEdit, onDelete }: Dashboar
 						{description}
 					</p>
 				</div>
+
+				{/* Categories */}
+				{event.categories_on_events && event.categories_on_events.length > 0 && (
+					<div className="flex flex-wrap gap-2 mb-3">
+						{event.categories_on_events.map((catRelation) => (
+							<Badge 
+								key={catRelation.categories.id} 
+								variant="outline" 
+								className="text-xs px-2 py-1"
+							>
+								{catRelation.categories.name}
+							</Badge>
+						))}
+					</div>
+				)}
 
 				{/* Event Info */}
 				<div>

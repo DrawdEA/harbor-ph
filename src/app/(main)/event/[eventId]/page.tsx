@@ -118,7 +118,7 @@ export default function EventDetailPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background relative">
+		<div className="min-h-screen bg-muted/40 relative">
 			{/* Back Button - hidden on mobile, visible on desktop */}
 			<div className="hidden md:block">
 				<BackButton />
@@ -135,6 +135,8 @@ export default function EventDetailPage() {
 								<Image 
 									src={event.imageUrl} 
 									alt={event.title}
+									width={800}
+									height={600}
 									className="w-full h-96 lg:h-[500px] object-cover rounded-lg"
 								/>
 							) : (
@@ -153,6 +155,24 @@ export default function EventDetailPage() {
 								<p className="text-xl text-gray-600 leading-relaxed">
 									{event.description}
 								</p>
+								
+								{/* Categories */}
+								{event.categories_on_events && event.categories_on_events.length > 0 && (
+									<div className="mt-4">
+										<div className="flex flex-wrap gap-2">
+											{event.categories_on_events.map((catRelation) => 
+												catRelation.categories && (
+													<span
+														key={catRelation.categories.id}
+														className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
+													>
+														{catRelation.categories.name}
+													</span>
+												)
+											)}
+										</div>
+									</div>
+								)}
 							</div>
 
 							{/* Status Badge */}
@@ -263,6 +283,25 @@ export default function EventDetailPage() {
 						<p className="text-gray-600 leading-relaxed text-lg">
 							{event.description}
 						</p>
+						
+						{/* Categories in About Section */}
+						{event.categories_on_events && event.categories_on_events.length > 0 && (
+							<div className="mt-6 pt-4 border-t border-muted/30">
+								<h3 className="text-lg font-semibold text-gray-800 mb-3">Event Categories</h3>
+								<div className="flex flex-wrap gap-2">
+									{event.categories_on_events.map((catRelation) => 
+										catRelation.categories && (
+											<span
+												key={catRelation.categories.id}
+												className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200 transition-colors"
+											>
+												{catRelation.categories.name}
+											</span>
+										)
+									)}
+								</div>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

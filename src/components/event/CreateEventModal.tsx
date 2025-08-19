@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { v4 as uuidv4 } from "uuid";
 import EventImageUpload from "@/components/event/EventImageUpload";
+import CategorySelector from "@/components/event/CategorySelector";
 import {
 	Dialog,
 	DialogContent,
@@ -30,6 +31,7 @@ const eventFormSchema = z.object({
 	startTime: z.string().min(1, "Start time is required"),
 	endTime: z.string().min(1, "End time is required"),
 	status: z.enum(["DRAFT", "PUBLISHED"]),
+	categories: z.array(z.string()).min(1, "Please select at least one category"),
 	
 	// Venue details
 	venueName: z.string().min(1, "Venue name is required"),
@@ -74,6 +76,7 @@ export default function CreateEventModal() {
 			startTime: "",
 			endTime: "",
 			status: "DRAFT",
+			categories: [],
 			venueName: "",
 			address: "",
 			city: "",
@@ -235,12 +238,35 @@ export default function CreateEventModal() {
 				console.log('Ticket type created successfully:', ticketTypeId);
 			}
 
-			// Success! Close modal, reset form, and refresh events
+			// Create category associations
+			if (data.categories && data.categories.length > 0) {
+				console.log('Creating category associations for event:', event.id);
+				
+				const categoryAssociations = data.categories.map(categoryId => ({
+					eventId: event.id,
+					categoryId: categoryId,
+					assignedAt: new Date().toISOString()
+				}));
+
+				const { error: categoryError } = await supabase
+					.from('categories_on_events')
+					.insert(categoryAssociations);
+
+				if (categoryError) {
+					console.error('Category association error:', categoryError);
+					throw new Error(`Category association failed: ${categoryError.message}`);
+				}
+				
+				console.log('Category associations created successfully');
+			}
+
+			// Success! Close modal, reset form, and redirect to events page
 			closeModal();
 			form.reset();
 			setUploadedImageUrl(null);
 			
-			// Refresh the router to update any data on the current page
+			// Redirect to events page and refresh to show the new event
+			router.push('/dashboard/events');
 			router.refresh();
 			
 		} catch (error) {
@@ -318,6 +344,24 @@ export default function CreateEventModal() {
 												placeholder="Describe your event..."
 												rows={4}
 												{...field}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							
+							<FormField
+								control={form.control}
+								name="categories"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Categories *</FormLabel>
+										<FormControl>
+											<CategorySelector
+												selectedCategories={field.value}
+												onCategoriesChange={field.onChange}
+												placeholder="Select event categories..."
 											/>
 										</FormControl>
 										<FormMessage />

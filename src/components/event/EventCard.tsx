@@ -1,6 +1,7 @@
 import { MapPin, Clock, Users, Image as ImageIcon, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import CategoryBadge from "./CategoryBadge";
 
 export type FeedEventCardData = {
 	id: string | number;
@@ -20,6 +21,16 @@ export type FeedEventCardData = {
 	time?: string; // For mock data
 	detailsUrl?: string; // For mock data
 	isLive?: boolean; // For mock data
+	categories?: Array<{
+		id: string;
+		name: string;
+	}> | null;
+	categories_on_events?: Array<{
+		categories: {
+			id: string;
+			name: string;
+		} | null;
+	}> | null;
 	venues?: {
 		name: string;
 		city: string;
@@ -108,6 +119,22 @@ export default function EventCard({ event }: FeedEventCardProps) {
 				
 				{/* Description */}
 				<p className="text-sm text-gray-600 line-clamp-2">{description}</p>
+				
+				{/* Categories */}
+				{event.categories_on_events && event.categories_on_events.length > 0 && (
+					<div className="flex flex-wrap gap-1">
+						{event.categories_on_events.map((catRelation) => 
+							catRelation.categories && (
+								<CategoryBadge
+									key={catRelation.categories.id}
+									categoryName={catRelation.categories.name}
+									variant="outline"
+									className="text-xs"
+								/>
+							)
+						)}
+					</div>
+				)}
 				
 				{/* Event Details */}
 				<div className="flex items-center space-x-4 text-sm text-gray-500">

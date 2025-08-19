@@ -218,10 +218,79 @@ export default function DashboardEventDetailPage() {
 							<CardHeader>
 								<CardTitle>About This Event</CardTitle>
 							</CardHeader>
-							<CardContent>
+							<CardContent className="space-y-4">
 								<p className="text-gray-600 leading-relaxed">{event.description}</p>
+								
+								{/* Categories */}
+								{event.categories_on_events && event.categories_on_events.length > 0 && (
+									<div className="pt-2">
+										<h4 className="text-sm font-medium text-gray-700 mb-2">Categories</h4>
+										<div className="flex flex-wrap gap-2">
+											{event.categories_on_events.map((catRelation) => 
+												catRelation.categories && (
+													<span
+														key={catRelation.categories.id}
+														className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
+													>
+														{catRelation.categories.name}
+													</span>
+												)
+											)}
+										</div>
+									</div>
+								)}
 							</CardContent>
 						</Card>
+
+						{/* Ticket Information */}
+						{event.ticket_types && event.ticket_types.length > 0 && (
+							<Card>
+								<CardHeader>
+									<CardTitle className="flex items-center space-x-2">
+										<Users className="h-5 w-5" />
+										<span>Ticket Information</span>
+									</CardTitle>
+								</CardHeader>
+								<CardContent>
+									<div className="space-y-4">
+										{event.ticket_types.map((ticket, index) => (
+											<div key={index} className="border rounded-lg p-4 bg-muted/30">
+												<div className="flex items-center justify-between mb-2">
+													<h4 className="font-semibold text-lg">{ticket.name}</h4>
+													<span className="text-2xl font-bold text-green-600">₱{ticket.price}</span>
+												</div>
+												<div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+													<div>
+														<span className="font-medium">Available:</span>
+														<p>{ticket.availableQuantity} of {ticket.quantity}</p>
+													</div>
+													{ticket.salesStartDate && (
+														<div>
+															<span className="font-medium">Sales Start:</span>
+															<p>{formatDate(ticket.salesStartDate)}</p>
+														</div>
+													)}
+													{ticket.salesEndDate && (
+														<div>
+															<span className="font-medium">Sales End:</span>
+															<p>{formatDate(ticket.salesEndDate)}</p>
+														</div>
+													)}
+													<div>
+														<span className="font-medium">Status:</span>
+														<p className={`font-medium ${
+															ticket.availableQuantity > 0 ? 'text-green-600' : 'text-red-600'
+														}`}>
+															{ticket.availableQuantity > 0 ? 'Available' : 'Sold Out'}
+														</p>
+													</div>
+												</div>
+											</div>
+										))}
+									</div>
+								</CardContent>
+							</Card>
+						)}
 					</TabsContent>
 
 					{/* Breakdown of Expenses Tab */}
