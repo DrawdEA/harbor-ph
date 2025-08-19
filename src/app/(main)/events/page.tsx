@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Filter, Calendar } from "lucide-react";
-import { fetchEvents } from "@/lib/event-query";
+import { fetchEvents, Event } from "@/lib/event-query";
 import EventCard from "@/components/event/EventCard";
 import EventCardSkeleton from "@/components/event/EventCardSkeleton";
 
@@ -26,9 +26,9 @@ export default function EventsPage() {
   );
   
   // Events state
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
 
   // Available categories (should match your database)
   const categories = ["Parties", "Flea Markets", "Concerts", "Running", "Other"];
@@ -87,23 +87,23 @@ export default function EventsPage() {
          // Location filter
      if (location) {
        filtered = filtered.filter(event => {
-                   // Handle both array and single object cases
-          if (Array.isArray(event.venues)) {
-            return event.venues.some((venue: any) => 
-              venue.name?.toLowerCase().includes(location.toLowerCase()) ||
-              venue.city?.toLowerCase().includes(location.toLowerCase()) ||
-              venue.province?.toLowerCase().includes(location.toLowerCase()) ||
-              venue.postalCode?.toLowerCase().includes(location.toLowerCase()) ||
-              venue.country?.toLowerCase().includes(location.toLowerCase())
-            );
-          } else if (event.venues) {
-            // Single venue object
-            return event.venues.name?.toLowerCase().includes(location.toLowerCase()) ||
-                   event.venues.city?.toLowerCase().includes(location.toLowerCase()) ||
-                   event.venues.province?.toLowerCase().includes(location.toLowerCase()) ||
-                   event.venues.postalCode?.toLowerCase().includes(location.toLowerCase()) ||
-                   event.venues.country?.toLowerCase().includes(location.toLowerCase());
-          }
+         // Handle both array and single object cases
+         if (Array.isArray(event.venues)) {
+           return event.venues.some((venue) => 
+             venue.name?.toLowerCase().includes(location.toLowerCase()) ||
+             venue.city?.toLowerCase().includes(location.toLowerCase()) ||
+             venue.province?.toLowerCase().includes(location.toLowerCase()) ||
+             venue.postalCode?.toLowerCase().includes(location.toLowerCase()) ||
+             venue.country?.toLowerCase().includes(location.toLowerCase())
+           );
+         } else if (event.venues) {
+           // Single venue object
+           return event.venues.name?.toLowerCase().includes(location.toLowerCase()) ||
+                  event.venues.city?.toLowerCase().includes(location.toLowerCase()) ||
+                  event.venues.province?.toLowerCase().includes(location.toLowerCase()) ||
+                  event.venues.postalCode?.toLowerCase().includes(location.toLowerCase()) ||
+                  event.venues.country?.toLowerCase().includes(location.toLowerCase());
+         }
          return false;
        });
      }
@@ -112,7 +112,7 @@ export default function EventsPage() {
      if (selectedCategories.length > 0) {
        filtered = filtered.filter(event => {
          if (Array.isArray(event.categories_on_events)) {
-           return event.categories_on_events.some((catRel: any) => 
+           return event.categories_on_events.some((catRel) => 
              catRel.categories && selectedCategories.includes(catRel.categories.name)
            );
          }
