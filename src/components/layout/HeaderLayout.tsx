@@ -205,9 +205,9 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 						</span>
 					</Link>
 					<div className="absolute right-4 flex items-center gap-3">
-						<button className="text-foreground flex items-center">
+						<Link href="/events" className="text-foreground hover:text-primary flex items-center">
 							<Search size={22} />
-						</button>
+						</Link>
 						{user ? (
 							isOrganization ? (
 								// Organization users see Dashboard button
@@ -286,11 +286,24 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 						})}
 					</nav>
 					<div className="flex min-w-0 flex-1 items-center justify-end">
-						<input
-							type="text"
-							placeholder="Search events..."
-							className="bg-muted/30 border-border text-foreground focus:ring-primary w-full max-w-xs rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
-						/>
+						<form 
+							onSubmit={(e) => {
+								e.preventDefault();
+								const formData = new FormData(e.currentTarget);
+								const searchTerm = formData.get('search') as string;
+								if (searchTerm.trim()) {
+									router.push(`/events?q=${encodeURIComponent(searchTerm.trim())}`);
+								}
+							}}
+							className="w-full max-w-xs"
+						>
+							<input
+								name="search"
+								type="text"
+								placeholder="Search events..."
+								className="bg-muted/30 border-border text-foreground focus:ring-primary w-full rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
+							/>
+						</form>
 					</div>
 					<div className="ml-6 flex items-center gap-3">
 						{user ? (
