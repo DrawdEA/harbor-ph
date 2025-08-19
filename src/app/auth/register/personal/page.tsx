@@ -17,23 +17,22 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { redirect } from "next/navigation";
 
 const formSchema = z.object({
 	username: z.string().min(2, {
 		message: "Username must be at least 2 characters.",
 	}),
 	firstName: z.string().min(2, {
-		message: "Username must be at least 2 characters.",
+		message: "First name must be at least 2 characters.",
 	}),
 	lastName: z.string().min(2, {
-		message: "Username must be at least 2 characters.",
+		message: "Last name must be at least 2 characters.",
 	}),
 	email: z.string().min(2, {
-		message: "Username must be at least 2 characters.",
+		message: "Email is required.",
 	}),
 	password: z.string().min(2, {
-		message: "Username must be at least 2 characters.",
+		message: "Password is required.",
 	}),
 });
 
@@ -53,13 +52,6 @@ export default function Personal() {
 		fetchSession();
 	}, []);
 
-	// Redirect if logged in
-	useEffect(() => {
-		if (session) {
-			redirect("/");
-		}
-	}, [session]);
-
 	// Forms
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -73,6 +65,7 @@ export default function Personal() {
 			password: values.password,
 			options: {
 				data: {
+					accountType: "personal", // Explicitly set account type
 					username: values.username,
 					firstName: values.firstName,
 					lastName: values.lastName
@@ -85,8 +78,9 @@ export default function Personal() {
 			console.log("not so sigma")
 			return;
 		} else {
-			console.log("Registered User");
-			redirect("/");
+			console.log("Registered Personal User, reloading to trigger middleware routing.");
+			// Force reload to trigger middleware routing
+			window.location.reload();
 		}
 	}
 

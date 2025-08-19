@@ -67,8 +67,8 @@ export default function DashboardEventDetailPage() {
 
 	if (loading) {
 		return (
-			<div className="min-h-screen bg-background">
-				<div className="max-w-6xl mx-auto px-4 py-8">
+			<div className="min-h-screen bg-background p-6">
+				<div className="mx-auto px-4 py-8">
 					<div className="animate-pulse space-y-6">
 						<div className="h-8 bg-muted rounded w-1/4"></div>
 						<div className="h-96 bg-muted rounded"></div>
@@ -88,7 +88,7 @@ export default function DashboardEventDetailPage() {
 			<div className="min-h-screen bg-background flex items-center justify-center">
 				<div className="text-center space-y-4">
 					<h1 className="text-2xl font-bold text-gray-900">Event Not Found</h1>
-					<p className="text-gray-600">The event you're looking for doesn't exist or has been removed.</p>
+					<p className="text-gray-600">The event you&apos;re looking for doesn&apos;t exist or has been removed.</p>
 					<Button asChild>
 						<Link href="/dashboard/events">Back to Events</Link>
 					</Button>
@@ -98,10 +98,10 @@ export default function DashboardEventDetailPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background">
+		<div className="min-h-screen space-y-6 p-6">
 			{/* Header */}
 			<div className="border-b border-muted/50 bg-white">
-				<div className="max-w-6xl mx-auto px-4 py-6">
+				<div className="mx-auto px-4 pb-6">
 					<div className="flex items-center justify-between">
 						<div>
 							<Button variant="ghost" size="sm" onClick={() => router.back()} className="mb-2">
@@ -124,7 +124,7 @@ export default function DashboardEventDetailPage() {
 			</div>
 
 			{/* Main Content */}
-			<div className="max-w-6xl mx-auto px-4 py-8">
+			<div className="mx-auto px-4 py-6">
 				<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
 					<TabsList className="grid w-full grid-cols-3">
 						<TabsTrigger value="main-dashboard" className="flex items-center space-x-2">

@@ -1,24 +1,82 @@
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Building2, Mail, Shield, Trash2 } from "lucide-react";
+import ProfilePictureUpload from "@/components/shared/ProfilePictureUpload";
 
-export default async function SettingsPage() {
-	const supabase = await createClient();
-	const { data: { user } } = await supabase.auth.getUser();
+interface OrganizationProfile {
+	id: string;
+	name: string;
+	description?: string;
+	websiteUrl?: string;
+	contactEmail?: string;
+	contactNumber?: string;
+	profilePictureUrl?: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
 
-	// Fetch organization profile
-	const { data: orgProfile } = await supabase
-		.from('organization_profiles')
-		.select('*')
-		.eq('id', user?.id)
-		.single();
+export default function SettingsPage() {
+	const [orgProfile, setOrgProfile] = useState<OrganizationProfile | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
+
+	useEffect(() => {
+		async function fetchOrgProfile() {
+			try {
+				const supabase = createClient();
+				const { data: { user } } = await supabase.auth.getUser();
+				
+				if (!user) return;
+
+				// Fetch organization profile
+				const { data: profile } = await supabase
+					.from('organization_profiles')
+					.select('*')
+					.eq('id', user.id)
+					.single();
+
+				setOrgProfile(profile);
+			} catch (error) {
+				console.error('Error fetching organization profile:', error);
+			} finally {
+				setIsLoading(false);
+			}
+		}
+
+		fetchOrgProfile();
+	}, []);
+
+	const handleProfilePictureUpdate = (newUrl: string | null) => {
+		setOrgProfile((prev) => prev ? {
+			...prev,
+			profilePictureUrl: newUrl
+		} : null);
+	};
+
+	if (isLoading) {
+		return (
+			<div className="space-y-6 p-6">
+				<div>
+					<h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+					<p className="text-muted-foreground">
+						Manage your organization profile and account settings.
+					</p>
+				</div>
+				<div className="text-center py-8 text-muted-foreground">
+					<p>Loading settings...</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
-		<div className="space-y-6 bg-muted/40 p-6">
+		<div className="space-y-6 p-6">
 			{/* Page Header */}
 			<div>
 				<h1 className="text-3xl font-bold tracking-tight">Settings</h1>
@@ -73,6 +131,16 @@ export default async function SettingsPage() {
 						<Button>Save Changes</Button>
 					</CardContent>
 				</Card>
+
+				{/* Organization Logo */}
+				<ProfilePictureUpload
+					currentProfilePictureUrl={orgProfile?.profilePictureUrl || null}
+					fullName={orgProfile?.name || 'Organization'}
+					onUpdate={handleProfilePictureUpdate}
+					type="organization"
+					storageBucket="avatars"
+					tableName="organization_profiles"
+				/>
 
 				{/* Contact Information */}
 				<Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border shadow-sm">

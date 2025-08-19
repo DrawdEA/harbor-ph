@@ -19,8 +19,8 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from "@/components/ui/dialog";
+import { useCreateEventModal } from "./CreateEventModalContext";
 
 // Zod schema for form validation
 const eventFormSchema = z.object({
@@ -60,15 +60,11 @@ const eventFormSchema = z.object({
 
 type EventFormData = z.infer<typeof eventFormSchema>;
 
-interface CreateEventModalProps {
-	onEventCreated?: () => void;
-}
-
-export default function CreateEventModal({ onEventCreated }: CreateEventModalProps) {
+export default function CreateEventModal() {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 	const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
-	const [open, setOpen] = useState(false);
+	const { isOpen, closeModal } = useCreateEventModal();
 
 	const form = useForm<EventFormData>({
 		resolver: zodResolver(eventFormSchema),
@@ -240,15 +236,11 @@ export default function CreateEventModal({ onEventCreated }: CreateEventModalPro
 			}
 
 			// Success! Close modal, reset form, and refresh events
-			setOpen(false);
+			closeModal();
 			form.reset();
 			setUploadedImageUrl(null);
 			
-			// Call the callback to refresh events list
-			if (onEventCreated) {
-				onEventCreated();
-			}
-			
+			// Refresh the router to update any data on the current page
 			router.refresh();
 			
 		} catch (error) {
@@ -276,13 +268,7 @@ export default function CreateEventModal({ onEventCreated }: CreateEventModalPro
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger asChild>
-				<Button className="flex items-center gap-2">
-					<Plus className="h-4 w-4" />
-					Create Event
-				</Button>
-			</DialogTrigger>
+		<Dialog open={isOpen} onOpenChange={closeModal}>
 			<DialogContent className="max-w-5xl max-h-[90vh] border-0 shadow-xl p-0 flex flex-col">
 				<div className="p-6 pb-0 flex-shrink-0">
 					<DialogHeader>
@@ -587,7 +573,7 @@ export default function CreateEventModal({ onEventCreated }: CreateEventModalPro
 								type="button" 
 								variant="outline" 
 								className="flex-1"
-								onClick={() => setOpen(false)}
+								onClick={closeModal}
 								disabled={isLoading}
 							>
 								Cancel

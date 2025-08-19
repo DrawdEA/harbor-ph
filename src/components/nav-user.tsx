@@ -6,7 +6,10 @@ import {
   IconLogout,
   IconNotification,
   IconUserCircle,
+  IconBuilding,
 } from "@tabler/icons-react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 import {
   Avatar,
@@ -35,10 +38,32 @@ export function NavUser({
   user: {
     name: string
     email: string
-    avatar: string
+    avatar: string | null
   }
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+
+  // Generate initials from organization name
+  const getInitials = (name: string): string => {
+    const parts = name.split(' ').filter(Boolean);
+    if (parts.length === 0) return 'O';
+    const firstInitial = parts[0][0];
+    const lastInitial = parts.length > 1 ? parts[parts.length - 1][0] : '';
+    return `${firstInitial}${lastInitial}`.toUpperCase();
+  };
+
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      // Still redirect even if there's an error
+      router.push('/auth/login');
+    }
+  };
 
   return (
     <SidebarMenu>
@@ -49,9 +74,15 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+              <Avatar className="h-8 w-8 rounded-lg flex-shrink-0">
+                <AvatarImage 
+                  src={user.avatar || undefined} 
+                  alt={user.name}
+                  className="object-cover w-full h-full"
+                />
+                <AvatarFallback className="rounded-lg bg-muted">
+                  {user.avatar ? getInitials(user.name) : <IconBuilding className="h-4 w-4" />}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -70,9 +101,15 @@ export function NavUser({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <Avatar className="h-8 w-8 rounded-lg flex-shrink-0">
+                  <AvatarImage 
+                    src={user.avatar || undefined} 
+                    alt={user.name}
+                    className="object-cover w-full h-full"
+                  />
+                  <AvatarFallback className="rounded-lg bg-muted">
+                    {user.avatar ? getInitials(user.name) : <IconBuilding className="h-4 w-4" />}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
@@ -98,7 +135,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <IconLogout />
               Log out
             </DropdownMenuItem>

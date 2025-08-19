@@ -149,7 +149,7 @@ export default function DashboardEventCard({ event, onEdit, onDelete }: Dashboar
 				</div>
 
 				{/* Event Info */}
-				<div className="space-y-3">
+				<div>
 					{/* Event Info Row */}
 					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-muted-foreground mb-[-3 ]">
 						<div className="flex flex-wrap items-center gap-x-4 gap-y-2">

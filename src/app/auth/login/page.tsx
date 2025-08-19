@@ -17,7 +17,6 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { redirect } from "next/navigation";
 
 const formSchema = z.object({
 	email: z.string().min(2, {
@@ -52,13 +51,6 @@ export default function Login() {
 		};
 	}, []);
 
-	// Redirect if logged in
-	useEffect(() => {
-		if (session) {
-			redirect("/");
-		}
-	}, [session]);
-
 	// Forms
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -75,8 +67,9 @@ export default function Login() {
 			console.error("Error signing in: ", error.message);
 			return;
 		} else {
-			console.log("Sign in successful, session will be updated.");
-			redirect("/");
+			console.log("Sign in successful, reloading to trigger middleware routing.");
+			// Force reload to trigger middleware routing
+			window.location.reload();
 		}
 		
 	}

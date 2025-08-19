@@ -70,7 +70,8 @@
   --chart-3: hsl(217.2 91.2% 59.8%); /* Blue */
   --chart-4: hsl(142.1 70.6% 45.3%); /* Green */
   --chart-5: hsl(220 8.9% 46.1%); /* Gray */
-  --sidebar: hsl(0 0% 100%);
+  --sidebar: hsl(220 13% 91% / 0.4); /* old: hsl(0 0% 100%); */
+  --sidebar-mobile: hsl(0 0% 100%);
   --sidebar-foreground: hsl(224 71.4% 4.1%);
   --sidebar-primary: hsl(0, 100%, 45%);
   --sidebar-primary-foreground: hsl(355.7 100% 97.3%);

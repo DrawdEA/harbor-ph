@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "lucide-react";
+import { Calendar, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import DashboardEventCard, { DashboardEventCardData } from "@/components/event/DashboardEventCard";
-import CreateEventModal from "@/components/event/CreateEventModal";
+import { Button } from "@/components/ui/button";
+import { useCreateEventModal } from "@/components/event/CreateEventModalContext";
+import EventsPageSkeleton from "@/components/event/EventsPageSkeleton";
 
 // Use the imported DashboardEventCardData type
 type FetchedEvent = DashboardEventCardData;
 
 export default function EventsPage() {
-	const [events, setEvents] = useState<FetchedEvent[]>([]);
+	const [events, setEvents] = useState<FetchedEvent[] | null>(null);
 	const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+	const { openModal } = useCreateEventModal();
 
 	// Function to fetch events
 	const fetchEvents = async () => {
@@ -77,7 +79,7 @@ export default function EventsPage() {
 	}, []);
 
 	return (
-		<div className="space-y-6 bg-muted/40 p-6 rounded-xl">
+		<div className="space-y-6 p-6">
 			{/* Page Header */}
 			<div className="flex items-center justify-between">
 				<div>
@@ -86,41 +88,36 @@ export default function EventsPage() {
 						Create and manage your organization&apos;s events.
 					</p>
 				</div>
-				<CreateEventModal onEventCreated={fetchEvents} />
+				<Button onClick={openModal} className="flex items-center gap-2">
+					<Plus className="h-4 w-4" />
+					Create Event
+				</Button>
 			</div>
 
-			{/* Events List */}
-			<Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border shadow-sm">
-				<CardHeader>
-					<CardTitle>Your Events</CardTitle>
-					<CardDescription>
-						Manage and view all your organization&apos;s events.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{isLoadingEvents ? (
-						<div className="text-center py-8 text-muted-foreground">
-							<Calendar className="mx-auto h-12 w-12 mb-2 opacity-50 animate-spin" />
-							<p>Loading events...</p>
-						</div>
-					) : events.length === 0 ? (
-						<div className="text-center py-8 text-muted-foreground">
-							<Calendar className="mx-auto h-12 w-12 mb-2 opacity-50" />
-							<p>No events created yet</p>
-							<p className="text-sm">Create your first event to get started!</p>
-						</div>
-					) : (
-						<div className="space-y-4">
-							{events.map((event) => (
-								<DashboardEventCard 
-									key={event.id} 
-									event={event} 
-								/>
-							))}
-						</div>
-					)}
-				</CardContent>
-			</Card>
+			{/* Events Section */}
+			<div className="space-y-4">
+				{/* Events Grid */}
+				{isLoadingEvents ? (
+					<EventsPageSkeleton />
+				) : events === null ? (
+					<EventsPageSkeleton />
+				) : events.length === 0 ? (
+					<div className="text-center py-8 text-muted-foreground">
+						<Calendar className="mx-auto h-12 w-12 mb-2 opacity-50" />
+						<p>No events created yet</p>
+						<p className="text-sm">Create your first event to get started!</p>
+					</div>
+				) : (
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						{events.map((event) => (
+							<DashboardEventCard 
+								key={event.id} 
+								event={event} 
+							/>
+						))}
+					</div>
+				)}
+			</div>
 		</div>
 	);
 }

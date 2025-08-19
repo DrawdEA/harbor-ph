@@ -74,13 +74,6 @@ export default function Organization() {
 		fetchSession();
 	}, [supabase.auth]);
 
-	// Redirect if logged in
-	useEffect(() => {
-		if (session) {
-			router.push("/");
-		}
-	}, [session, router]);
-
 	// Forms
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -132,8 +125,9 @@ export default function Organization() {
 			}
 
 			// Organization profile is automatically created by database trigger
-			console.log("Created Organization Account with Profile (via trigger)");
-			router.push("/dashboard");
+			console.log("Created Organization Account with Profile (via trigger), reloading to trigger middleware routing.");
+			// Force reload to trigger middleware routing
+			window.location.reload();
 		} catch (error: unknown) {
 			const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 			console.error("Registration error:", errorMessage);

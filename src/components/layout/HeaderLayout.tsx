@@ -97,8 +97,11 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<div className="hover:bg-muted/50 relative cursor-pointer rounded-md p-1 transition-colors">
-					<Avatar className="h-8 w-8">
-						<AvatarImage src={avatarUrl} />
+					<Avatar className="h-8 w-8 flex-shrink-0">
+						<AvatarImage 
+							src={avatarUrl} 
+							className="object-cover w-full h-full"
+						/>
 						<AvatarFallback>{initials}</AvatarFallback>
 					</Avatar>
 				</div>
@@ -106,8 +109,11 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 			<DropdownMenuContent align="end" className="w-56">
 				<DropdownMenuLabel>
 					<div className="flex items-center gap-2">
-						<Avatar className="h-8 w-8">
-							<AvatarImage src={avatarUrl} />
+						<Avatar className="h-8 w-8 flex-shrink-0">
+							<AvatarImage 
+								src={avatarUrl} 
+								className="object-cover w-full h-full"
+							/>
 							<AvatarFallback>{initials}</AvatarFallback>
 						</Avatar>
 						<div className="flex flex-col flex-1 min-w-0"> {/* Add min-w-0 for flex truncation */}
@@ -138,8 +144,11 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 		<Sheet>
 			<SheetTrigger asChild>
 				<div className="hover:bg-muted/50 relative cursor-pointer rounded-md p-1 transition-colors">
-					<Avatar className="h-8 w-8">
-						<AvatarImage src="/placeholder-avatar.jpg" />
+					<Avatar className="h-8 w-8 flex-shrink-0">
+						<AvatarImage 
+							src="/placeholder-avatar.jpg" 
+							className="object-cover w-full h-full"
+						/>
 						<AvatarFallback>U</AvatarFallback>
 					</Avatar>
 				</div>
@@ -148,8 +157,11 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 				<SheetHeader>
 					<SheetTitle>
 						<div className="flex items-center gap-3">
-							<Avatar className="h-12 w-12">
-								<AvatarImage src="/placeholder-avatar.jpg" />
+							<Avatar className="h-12 w-12 flex-shrink-0">
+								<AvatarImage 
+									src="/placeholder-avatar.jpg" 
+									className="object-cover w-full h-full"
+								/>
 								<AvatarFallback>U</AvatarFallback>
 							</Avatar>
 							<div className="flex flex-col items-start">
@@ -221,8 +233,8 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 						// Determine if the current tab is active
 						const isActive = (
 							tab.href === '/'
-							? pathname === '/'
-							: pathname.startsWith(tab.href)
+								? pathname === '/'
+								: pathname.startsWith(tab.href)
 						);
 
 						return (
