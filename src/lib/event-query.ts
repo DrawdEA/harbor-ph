@@ -69,7 +69,8 @@ export const fetchEvents = async ({ pageParam = 0 }: { pageParam?: number }) => 
 					name,
 					city,
 					province,
-					country
+					country,
+					postalCode
 				),
 				ticket_types (
 					name,

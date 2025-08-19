@@ -91,7 +91,7 @@ export default function RightSidebar() {
           <Label htmlFor="location" className="font-semibold text-sm text-muted-foreground">Location</Label>
           <Input 
             id="location" 
-            placeholder="City or Zip Code" 
+            placeholder="Search by location..." 
             value={location}
             onChange={(e) => setLocation(e.target.value)}
           />

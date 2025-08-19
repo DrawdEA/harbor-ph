@@ -84,24 +84,41 @@ export default function EventsPage() {
       });
     }
 
-    // Location filter
-    if (location) {
-      filtered = filtered.filter(event => 
-        event.venues?.some((venue: any) => 
-          venue.city?.toLowerCase().includes(location.toLowerCase()) ||
-          venue.province?.toLowerCase().includes(location.toLowerCase())
-        )
-      );
-    }
+         // Location filter
+     if (location) {
+       filtered = filtered.filter(event => {
+                   // Handle both array and single object cases
+          if (Array.isArray(event.venues)) {
+            return event.venues.some((venue: any) => 
+              venue.name?.toLowerCase().includes(location.toLowerCase()) ||
+              venue.city?.toLowerCase().includes(location.toLowerCase()) ||
+              venue.province?.toLowerCase().includes(location.toLowerCase()) ||
+              venue.postalCode?.toLowerCase().includes(location.toLowerCase()) ||
+              venue.country?.toLowerCase().includes(location.toLowerCase())
+            );
+          } else if (event.venues) {
+            // Single venue object
+            return event.venues.name?.toLowerCase().includes(location.toLowerCase()) ||
+                   event.venues.city?.toLowerCase().includes(location.toLowerCase()) ||
+                   event.venues.province?.toLowerCase().includes(location.toLowerCase()) ||
+                   event.venues.postalCode?.toLowerCase().includes(location.toLowerCase()) ||
+                   event.venues.country?.toLowerCase().includes(location.toLowerCase());
+          }
+         return false;
+       });
+     }
 
-    // Categories filter
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter(event => 
-        event.categories_on_events?.some((catRel: any) => 
-          catRel.categories && selectedCategories.includes(catRel.categories.name)
-        )
-      );
-    }
+         // Categories filter
+     if (selectedCategories.length > 0) {
+       filtered = filtered.filter(event => {
+         if (Array.isArray(event.categories_on_events)) {
+           return event.categories_on_events.some((catRel: any) => 
+             catRel.categories && selectedCategories.includes(catRel.categories.name)
+           );
+         }
+         return false;
+       });
+     }
 
     setFilteredEvents(filtered);
   };
@@ -182,7 +199,7 @@ export default function EventsPage() {
                  <div className="space-y-4">
                    <Label className="font-semibold text-sm text-muted-foreground">Location</Label>
                    <Input
-                     placeholder="City or Zip Code"
+                     placeholder="Search by location..."
                      value={location}
                      onChange={(e) => setLocation(e.target.value)}
                    />
