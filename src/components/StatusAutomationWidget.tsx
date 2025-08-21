@@ -168,7 +168,7 @@ export default function StatusAutomationWidget() {
       </Card>
 
       {/* Status Automation Card */}
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Play className="h-5 w-5" />
