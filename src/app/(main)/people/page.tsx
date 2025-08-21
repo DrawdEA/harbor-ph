@@ -36,8 +36,11 @@ export default function PeoplePage() {
   }, []);
 
   useEffect(() => {
-    applyFilters();
-  }, [userProfiles, organizationProfiles, searchTerm, selectedType]);
+    // Initial load - show all results
+    if (userProfiles.length > 0 || organizationProfiles.length > 0) {
+      applyFilters();
+    }
+  }, [userProfiles, organizationProfiles]);
 
   const loadProfiles = async () => {
     try {
@@ -103,17 +106,19 @@ export default function PeoplePage() {
       });
     }
 
-
-
     console.log('Final filtered results:', filtered);
     setFilteredResults(filtered);
   };
 
-
-
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedType('all');
+    // Reset filtered results to show all profiles
+    const allResults: (UserProfile | OrganizationProfile)[] = [
+      ...userProfiles,
+      ...organizationProfiles
+    ];
+    setFilteredResults(allResults);
     router.push('/people');
   };
 
@@ -148,18 +153,6 @@ export default function PeoplePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 pt-0">
-                {/* Search */}
-                <div className="space-y-4">
-                  <Label className="font-semibold text-sm text-muted-foreground">Search</Label>
-                  <Input
-                    placeholder="Search names, descriptions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                <Separator className="my-6" />
-
                 {/* Type Filter */}
                 <div className="space-y-4">
                   <Label className="font-semibold text-sm text-muted-foreground">Type</Label>
@@ -191,13 +184,28 @@ export default function PeoplePage() {
                   </div>
                 </div>
 
+                <Separator className="my-6" />
+
+                {/* Search */}
+                <div className="space-y-4">
+                  <Label className="font-semibold text-sm text-muted-foreground">Search</Label>
+                  <Input
+                    placeholder="Search names, descriptions..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
 
 
                 
 
-                {/* Clear Filters Button - Animated when filters are active */}
-                {hasActiveFilters && (
-                  <div className="pt-4">
+                {/* Action Buttons */}
+                <div className="space-y-3 pt-4">
+                  <Button onClick={applyFilters} className="w-full">
+                    Apply Filters
+                  </Button>
+                  {hasActiveFilters && (
                     <Button 
                       onClick={clearFilters} 
                       variant="outline" 
@@ -205,8 +213,8 @@ export default function PeoplePage() {
                     >
                       Clear Filters
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
