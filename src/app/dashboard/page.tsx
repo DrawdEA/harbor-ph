@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { SectionCards } from "@/components/section-cards"
+import StatusAutomationWidget from "@/components/StatusAutomationWidget"
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -47,6 +48,7 @@ export default async function DashboardPage() {
         revenueGrowth={revenueGrowth}
       />
       <div className="px-4 lg:px-6">
+        <StatusAutomationWidget />
         <ChartAreaInteractive />
       </div>
     </>

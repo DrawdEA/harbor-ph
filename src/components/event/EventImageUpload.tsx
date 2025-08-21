@@ -8,6 +8,9 @@ import { Image as ImageIcon, Upload, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 
+// Default placeholder image for events without custom images
+const DEFAULT_EVENT_IMAGE = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80";
+
 interface EventImageUploadProps {
   currentImageUrl: string | null;
   eventTitle: string;
@@ -17,9 +20,6 @@ interface EventImageUploadProps {
 export default function EventImageUpload({ currentImageUrl, eventTitle, onImageUpdate }: EventImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-
-  // Default placeholder image - you can replace this with your own image
-  const defaultImageUrl = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80";
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -85,7 +85,7 @@ export default function EventImageUpload({ currentImageUrl, eventTitle, onImageU
   };
 
   // Determine what image to show
-  const displayImageUrl = currentImageUrl || defaultImageUrl;
+  const displayImageUrl = currentImageUrl || DEFAULT_EVENT_IMAGE;
   const isDefaultImage = !currentImageUrl;
 
   return (

@@ -5,6 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import Image from "next/image";
 
+// Default placeholder image for events without custom images
+const DEFAULT_EVENT_IMAGE = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80";
+
 export type DashboardEventCardData = {
 	id: string | number;
 	title?: string;
@@ -47,11 +50,8 @@ export default function DashboardEventCard({ event, onEdit, onDelete }: Dashboar
 	const description = event.description || 'No description available';
 	const imageUrl = event.imageUrl;
 	
-	// Default placeholder image for events without custom images
-	const defaultImageUrl = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80";
-	
 	// Use custom image if available, otherwise use default
-	const displayImageUrl = imageUrl || defaultImageUrl;
+	const displayImageUrl = imageUrl || DEFAULT_EVENT_IMAGE;
 
 	const formatDate = (dateString: string) => {
 		try {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { EventStatusBadge } from "./EventStatusBadge";
+import EventStatusBadge from "./EventStatusBadge";
 import { ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 

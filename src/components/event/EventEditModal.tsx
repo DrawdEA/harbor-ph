@@ -73,6 +73,8 @@ export default function EventEditModal({ isOpen, onClose, event, onEventUpdated 
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 	const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(event?.imageUrl || null);
+	const [availableTransitions, setAvailableTransitions] = useState<string[]>([]);
+	const [isLoadingTransitions, setIsLoadingTransitions] = useState(false);
 
 	const form = useForm<EventEditFormData>({
 		resolver: zodResolver(eventEditSchema),
@@ -97,6 +99,24 @@ export default function EventEditModal({ isOpen, onClose, event, onEventUpdated 
 		}
 	});
 
+	// Fetch available status transitions
+	const fetchAvailableTransitions = async () => {
+		if (!event?.id) return;
+		
+		setIsLoadingTransitions(true);
+		try {
+			const response = await fetch(`/api/events/${event.id}/validate-status`);
+			if (response.ok) {
+				const data = await response.json();
+				setAvailableTransitions(data.availableTransitions || []);
+			}
+		} catch (error) {
+			console.error('Failed to fetch transitions:', error);
+		} finally {
+			setIsLoadingTransitions(false);
+		}
+	};
+
 	// Update form when event changes
 	useEffect(() => {
 		if (event) {
@@ -120,13 +140,62 @@ export default function EventEditModal({ isOpen, onClose, event, onEventUpdated 
 				salesEndDate: event.ticket_types?.[0]?.salesEndDate ? new Date(event.ticket_types[0].salesEndDate).toISOString().slice(0, 16) : ""
 			});
 			setUploadedImageUrl(event.imageUrl || null);
+			
+			// Fetch available transitions when event changes
+			fetchAvailableTransitions();
 		}
 	}, [event, form]);
+
+	// Validate status change before submission
+	const validateStatusChange = async (newStatus: string) => {
+		if (newStatus === event?.status) return { allowed: true }; // No change
+		
+		try {
+			// First validate the transition
+			const validationResponse = await fetch(`/api/events/${event.id}/validate-status`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ newStatus })
+			});
+			
+			if (validationResponse.ok) {
+				const validation = await validationResponse.json();
+				if (!validation.validation.allowed) {
+					return validation.validation;
+				}
+				
+				// If validation passes, update the status
+				const updateResponse = await fetch(`/api/events/${event.id}/status`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ newStatus })
+				});
+				
+				if (updateResponse.ok) {
+					return { allowed: true, message: 'Status updated successfully' };
+				} else {
+					const updateError = await updateResponse.json();
+					return { allowed: false, errors: [updateError.error || 'Status update failed'] };
+				}
+			}
+		} catch (error) {
+			console.error('Status validation failed:', error);
+		}
+		
+		return { allowed: false, errors: ['Status validation failed'] };
+	};
 
 	const onSubmit = async (data: EventEditFormData) => {
 		setIsLoading(true);
 		
 		try {
+			// Validate status change first
+			const statusValidation = await validateStatusChange(data.status);
+			if (!statusValidation.allowed) {
+				throw new Error(`Cannot change status to ${data.status}: ${statusValidation.errors?.join(', ')}`);
+			}
+			
+			// Continue with form submission...
 			const supabase = createClient();
 			
 			// Get current user
@@ -276,16 +345,39 @@ export default function EventEditModal({ isOpen, onClose, event, onEventUpdated 
 														<SelectValue placeholder="Select status" />
 													</SelectTrigger>
 													<SelectContent>
-														<SelectItem value="DRAFT">Draft (Private - Only you can see)</SelectItem>
-														<SelectItem value="PUBLISHED">Published (Public - Everyone can see, no registration yet)</SelectItem>
-														<SelectItem value="ACTIVE">Active (Public - Accepting registrations)</SelectItem>
-														<SelectItem value="LIVE">Live (Event is happening now)</SelectItem>
-														<SelectItem value="COMPLETED">Completed (Event finished)</SelectItem>
-														<SelectItem value="CANCELED">Canceled (Event cancelled)</SelectItem>
+														{/* Always show current status */}
+														<SelectItem value={event?.status || "DRAFT"}>
+															{event?.status || "DRAFT"} (Current)
+														</SelectItem>
+														
+														{/* Show available transitions */}
+														{availableTransitions.map((status) => (
+															<SelectItem key={status} value={status}>
+																{status === "PUBLISHED" && "Published (Public - Everyone can see, no registration yet)"}
+																{status === "ACTIVE" && "Active (Public - Accepting registrations)"}
+																{status === "LIVE" && "Live (Event is happening now)"}
+																{status === "COMPLETED" && "Completed (Event finished)"}
+																{status === "CANCELED" && "Canceled (Event cancelled)"}
+																{status === "DRAFT" && "Draft (Private - Only you can see)"}
+															</SelectItem>
+														))}
 													</SelectContent>
 												</Select>
 											</FormControl>
 											<FormMessage />
+											
+											{/* Show available transitions info */}
+											{isLoadingTransitions ? (
+												<p className="text-sm text-muted-foreground">Loading available status changes...</p>
+											) : availableTransitions.length > 0 ? (
+												<p className="text-sm text-green-600">
+													✅ Available status changes: {availableTransitions.join(", ")}
+												</p>
+											) : (
+												<p className="text-sm text-orange-600">
+													⚠️ No status changes available. Complete required fields to unlock more options.
+												</p>
+											)}
 										</FormItem>
 									)}
 								/>

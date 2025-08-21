@@ -2,6 +2,10 @@ import { MapPin, Clock, Users, Image as ImageIcon, Calendar } from "lucide-react
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import CategoryBadge from "./CategoryBadge";
+import EventStatusBadge from "./EventStatusBadge";
+
+// Default placeholder image for events without custom images
+const DEFAULT_EVENT_IMAGE = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80";
 
 export type FeedEventCardData = {
 	id: string | number;
@@ -57,11 +61,8 @@ export default function EventCard({ event }: FeedEventCardProps) {
 	const imageUrl = event.imageUrl || event.imageSrc;
 	const imageAlt = event.imageAlt || title;
 	
-	// Default placeholder image for events without custom images
-	const defaultImageUrl = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80";
-	
 	// Use custom image if available, otherwise use default
-	const displayImageUrl = imageUrl || defaultImageUrl;
+	const displayImageUrl = imageUrl || DEFAULT_EVENT_IMAGE;
 	
 	const hasRealData = event.startTime && event.endTime;
 	const hasMockData = event.date && event.time;
@@ -103,21 +104,30 @@ export default function EventCard({ event }: FeedEventCardProps) {
 	
 	return (
 		<div className="flex flex-col space-y-3 rounded-lg bg-white p-4 shadow-sm">
-			{/* Image */}
-			{displayImageUrl ? (
-				<img 
-					src={displayImageUrl} 
-					alt={imageAlt}
-					className="h-40 w-full rounded-lg object-cover"
-					onError={(e) => {
-						console.warn('Failed to load image:', displayImageUrl);
-					}}
-				/>
-			) : (
-				<div className="h-40 w-full rounded-lg bg-muted flex items-center justify-center">
-					<ImageIcon className="w-16 h-16 text-muted-foreground" />
-				</div>
-			)}
+			{/* Image with Status Badge Overlay */}
+			<div className="relative">
+				{displayImageUrl ? (
+					<img 
+						src={displayImageUrl} 
+						alt={imageAlt}
+						className="h-40 w-full rounded-lg object-cover"
+						onError={(e) => {
+							console.warn('Failed to load image:', displayImageUrl);
+						}}
+					/>
+				) : (
+					<div className="h-40 w-full rounded-lg bg-muted flex items-center justify-center">
+						<ImageIcon className="w-16 h-16 text-muted-foreground" />
+					</div>
+				)}
+				
+				{/* Status Badge - Upper Right Corner */}
+				{event.status && (
+					<div className="absolute top-2 right-2">
+						<EventStatusBadge status={event.status} />
+					</div>
+				)}
+			</div>
 			
 			<div className="space-y-2">
 				{/* Event Title */}
@@ -183,27 +193,8 @@ export default function EventCard({ event }: FeedEventCardProps) {
 					)}
 				</div>
 				
-				{/* Status Badge and View Details Button */}
-				<div className="flex justify-between items-center">
-					{event.status ? (
-						<span className={`px-2 py-1 text-xs rounded-full ${
-							event.status === 'PUBLISHED' 
-								? 'bg-green-100 text-green-800' 
-								: 'bg-yellow-100 text-yellow-800'
-						}`}>
-							{event.status}
-						</span>
-					) : event.isLive !== undefined ? (
-						<span className={`px-2 py-1 text-xs rounded-full ${
-							event.isLive 
-								? 'bg-green-100 text-green-800' 
-								: 'bg-gray-100 text-gray-800'
-						}`}>
-							{event.isLive ? 'LIVE' : 'UPCOMING'}
-						</span>
-					) : null}
-
-					{/* View Details Button - Navigate to event page */}
+				{/* View Details Button */}
+				<div className="flex justify-end">
 					<Button 
 						variant="default" 
 						size="sm" 

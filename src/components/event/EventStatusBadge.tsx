@@ -5,59 +5,59 @@ interface EventStatusBadgeProps {
   className?: string;
 }
 
-export function EventStatusBadge({ status, className }: EventStatusBadgeProps) {
+export default function EventStatusBadge({ status, className = "" }: EventStatusBadgeProps) {
   const getStatusConfig = (status: string) => {
-    switch (status) {
+    switch (status.toUpperCase()) {
       case 'DRAFT':
-        return { 
-          variant: 'secondary' as const, 
-          text: 'Draft', 
-          color: 'bg-gray-100 text-gray-800 border-gray-200' 
+        return {
+          variant: 'secondary' as const,
+          text: 'Draft',
+          color: 'bg-gray-100 text-gray-800'
         };
       case 'PUBLISHED':
-        return { 
-          variant: 'outline' as const, 
-          text: 'Published', 
-          color: 'bg-blue-50 text-blue-700 border-blue-200' 
+        return {
+          variant: 'default' as const,
+          text: 'Published',
+          color: 'bg-blue-100 text-blue-800'
         };
       case 'ACTIVE':
-        return { 
-          variant: 'default' as const, 
-          text: 'Active', 
-          color: 'bg-green-100 text-green-800 border-green-200' 
+        return {
+          variant: 'default' as const,
+          text: 'Active',
+          color: 'bg-green-100 text-green-800'
         };
       case 'LIVE':
-        return { 
-          variant: 'destructive' as const, 
-          text: 'LIVE NOW', 
-          color: 'bg-red-100 text-red-800 border-red-200 animate-pulse' 
+        return {
+          variant: 'default' as const,
+          text: 'Live',
+          color: 'bg-orange-100 text-orange-800'
         };
       case 'COMPLETED':
-        return { 
-          variant: 'secondary' as const, 
-          text: 'Completed', 
-          color: 'bg-purple-100 text-purple-800 border-purple-200' 
+        return {
+          variant: 'secondary' as const,
+          text: 'Completed',
+          color: 'bg-purple-100 text-purple-800'
         };
       case 'CANCELED':
-        return { 
-          variant: 'destructive' as const, 
-          text: 'Canceled', 
-          color: 'bg-red-100 text-red-800 border-red-200' 
+        return {
+          variant: 'destructive' as const,
+          text: 'Canceled',
+          color: 'bg-red-100 text-red-800'
         };
       default:
-        return { 
-          variant: 'secondary' as const, 
-          text: status, 
-          color: 'bg-gray-100 text-gray-800 border-gray-200' 
+        return {
+          variant: 'secondary' as const,
+          text: status,
+          color: 'bg-gray-100 text-gray-800'
         };
     }
   };
-  
+
   const config = getStatusConfig(status);
-  
+
   return (
     <Badge 
-      variant={config.variant} 
+      variant={config.variant}
       className={`${config.color} ${className}`}
     >
       {config.text}

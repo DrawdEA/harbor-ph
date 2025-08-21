@@ -3,35 +3,31 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Filter, Calendar } from "lucide-react";
+import { Search } from "lucide-react";
 import { fetchEvents, Event } from "@/lib/event-query";
 import EventCard from "@/components/event/EventCard";
 import EventCardSkeleton from "@/components/event/EventCardSkeleton";
+import FeedFilters, { FeedFilters as FeedFiltersType } from "@/components/feed/FeedFilters";
 
 export default function EventsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
   // Filter state
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
-  const [selectedDate, setSelectedDate] = useState(searchParams.get('date') || '');
-  const [location, setLocation] = useState(searchParams.get('location') || '');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    searchParams.get('categories') ? searchParams.get('categories')!.split(',') : []
-  );
+  const [filters, setFilters] = useState<FeedFiltersType>({
+    status: searchParams.get('status') || 'ALL',
+    dateRange: searchParams.get('dateRange') || 'ALL',
+    category: searchParams.get('category') || '',
+    location: searchParams.get('location') || ''
+  });
+  
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Events state
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
-
-  // Available categories (should match your database)
-  const categories = ["Parties", "Flea Markets", "Concerts", "Running", "Other"];
 
   useEffect(() => {
     loadEvents();
@@ -39,7 +35,7 @@ export default function EventsPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [events, searchTerm, selectedDate, location, selectedCategories]);
+  }, [events, filters, searchTerm]);
 
   const loadEvents = async () => {
     try {
@@ -64,61 +60,70 @@ export default function EventsPage() {
       );
     }
 
-    // Date filter
-    if (selectedDate) {
-      const today = new Date();
+    // Status filter
+    if (filters.status !== 'ALL') {
+      filtered = filtered.filter(event => event.status === filters.status);
+    }
+
+    // Date range filter
+    if (filters.dateRange !== 'ALL') {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
       
-      const thisWeekend = new Date(today);
-      thisWeekend.setDate(thisWeekend.getDate() + (6 - today.getDay()));
+      const thisWeek = new Date(today);
+      thisWeek.setDate(thisWeek.getDate() + 7);
+      
+      const thisMonth = new Date(today);
+      thisMonth.setMonth(thisMonth.getMonth() + 1);
 
       filtered = filtered.filter(event => {
         const eventDate = new Date(event.startTime);
-        if (selectedDate === 'today') {
-          return eventDate.toDateString() === today.toDateString();
-        } else if (selectedDate === 'weekend') {
-          return eventDate >= today && eventDate <= thisWeekend;
+        
+        switch (filters.dateRange) {
+          case 'TODAY':
+            return eventDate.toDateString() === today.toDateString();
+          case 'TOMORROW':
+            return eventDate.toDateString() === tomorrow.toDateString();
+          case 'THIS_WEEK':
+            return eventDate >= today && eventDate <= thisWeek;
+          case 'THIS_MONTH':
+            return eventDate >= today && eventDate <= thisMonth;
+          case 'UPCOMING':
+            return eventDate >= today;
+          default:
+            return true;
         }
-        return true;
       });
     }
 
-         // Location filter
-     if (location) {
-       filtered = filtered.filter(event => {
-         // Handle both array and single object cases
-         if (Array.isArray(event.venues)) {
-           return event.venues.some((venue) => 
-             venue.name?.toLowerCase().includes(location.toLowerCase()) ||
-             venue.city?.toLowerCase().includes(location.toLowerCase()) ||
-             venue.province?.toLowerCase().includes(location.toLowerCase()) ||
-             venue.postalCode?.toLowerCase().includes(location.toLowerCase()) ||
-             venue.country?.toLowerCase().includes(location.toLowerCase())
-           );
-         } else if (event.venues) {
-           // Single venue object
-           return event.venues.name?.toLowerCase().includes(location.toLowerCase()) ||
-                  event.venues.city?.toLowerCase().includes(location.toLowerCase()) ||
-                  event.venues.province?.toLowerCase().includes(location.toLowerCase()) ||
-                  event.venues.postalCode?.toLowerCase().includes(location.toLowerCase()) ||
-                  event.venues.country?.toLowerCase().includes(location.toLowerCase());
-         }
-         return false;
-       });
-     }
+    // Category filter
+    if (filters.category) {
+      filtered = filtered.filter(event => {
+        if (!event.categories_on_events) return false;
+        return event.categories_on_events.some(cat => 
+          cat.categories?.name?.toLowerCase().includes(filters.category.toLowerCase())
+        );
+      });
+    }
 
-         // Categories filter
-     if (selectedCategories.length > 0) {
-       filtered = filtered.filter(event => {
-         if (Array.isArray(event.categories_on_events)) {
-           return event.categories_on_events.some((catRel) => 
-             catRel.categories && selectedCategories.includes(catRel.categories.name)
-           );
-         }
-         return false;
-       });
-     }
+    // Location filter
+    if (filters.location) {
+      filtered = filtered.filter(event => {
+        if (!event.venues) return false;
+        
+        // Handle both array and single object cases
+        const venues = Array.isArray(event.venues) ? event.venues : [event.venues];
+        return venues.some((venue) => 
+          venue.name?.toLowerCase().includes(filters.location.toLowerCase()) ||
+          venue.city?.toLowerCase().includes(filters.location.toLowerCase()) ||
+          venue.province?.toLowerCase().includes(filters.location.toLowerCase()) ||
+          venue.postalCode?.toLowerCase().includes(filters.location.toLowerCase()) ||
+          venue.country?.toLowerCase().includes(filters.location.toLowerCase())
+        );
+      });
+    }
 
     setFilteredEvents(filtered);
   };
@@ -127,22 +132,18 @@ export default function EventsPage() {
 
 
 
-  const handleCategoryToggle = (category: string) => {
-    const newCategories = selectedCategories.includes(category)
-      ? selectedCategories.filter(c => c !== category)
-      : [...selectedCategories, category];
-    setSelectedCategories(newCategories);
-  };
-
   const clearFilters = () => {
+    setFilters({
+      status: 'ALL',
+      dateRange: 'ALL',
+      category: '',
+      location: ''
+    });
     setSearchTerm('');
-    setSelectedDate('');
-    setLocation('');
-    setSelectedCategories([]);
     router.push('/events');
   };
 
-  const hasActiveFilters = searchTerm || selectedDate || location || selectedCategories.length > 0;
+  const hasActiveFilters = Object.values(filters).some(value => value && value !== 'ALL') || searchTerm;
 
   return (
     <div className="min-h-screen bg-muted/40">
@@ -159,87 +160,11 @@ export default function EventsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters Sidebar */}
+          {/* Enhanced Filters Sidebar - Sticky */}
           <div className="lg:col-span-1">
-                         <Card className="sticky top-20 font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border p-0 shadow-sm">
-                                            <CardHeader className="px-6 pt-6">
-                 <CardTitle className="flex items-center gap-2">
-                   <Filter className="h-4 w-4" />
-                   Filters
-                 </CardTitle>
-               </CardHeader>
-               <CardContent className="p-6 pt-0">
-
-                {/* Date Filter */}
-                <div className="space-y-3">
-                  <Label className="font-semibold text-sm text-muted-foreground">Date</Label>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      variant={selectedDate === 'today' ? 'default' : 'secondary'}
-                      className="w-full justify-start"
-                      onClick={() => setSelectedDate(selectedDate === 'today' ? '' : 'today')}
-                    >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Today
-                    </Button>
-                    <Button
-                      variant={selectedDate === 'weekend' ? 'default' : 'secondary'}
-                      className="w-full justify-start"
-                      onClick={() => setSelectedDate(selectedDate === 'weekend' ? '' : 'weekend')}
-                    >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      This Weekend
-                    </Button>
-                  </div>
-                </div>
-
-                                 <Separator className="my-6" />
-
-                 {/* Location Filter */}
-                 <div className="space-y-4">
-                   <Label className="font-semibold text-sm text-muted-foreground">Location</Label>
-                   <Input
-                     placeholder="Search by location..."
-                     value={location}
-                     onChange={(e) => setLocation(e.target.value)}
-                   />
-                 </div>
-
-                 <Separator className="my-6" />
-
-                 {/* Categories Filter */}
-                 <div className="space-y-4">
-                   <h4 className="font-semibold text-sm text-muted-foreground">Categories</h4>
-                   <div className="flex flex-col gap-3">
-                     {categories.map((category) => (
-                       <div key={category} className="flex items-center space-x-2">
-                         <Checkbox
-                           id={category.toLowerCase()}
-                           checked={selectedCategories.includes(category)}
-                           onCheckedChange={() => handleCategoryToggle(category)}
-                         />
-                         <Label htmlFor={category.toLowerCase()} className="font-normal text-sm">
-                           {category}
-                         </Label>
-                       </div>
-                     ))}
-                   </div>
-                 </div>
-
-                                 {/* Clear Filters Button - Animated when filters are active */}
-                 {hasActiveFilters && (
-                   <div className="pt-4">
-                     <Button 
-                       onClick={clearFilters} 
-                       variant="outline" 
-                       className="w-full transition-all duration-200 ease-in-out animate-in slide-in-from-top-2"
-                     >
-                       Clear Filters
-                     </Button>
-                   </div>
-                 )}
-               </CardContent>
-            </Card>
+            <div className="sticky top-21.5">
+              <FeedFilters onFiltersChange={setFilters} />
+            </div>
           </div>
 
           {/* Events Grid */}

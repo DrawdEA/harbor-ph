@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { EventStatusBadge } from "./EventStatusBadge";
+import EventStatusBadge from "./EventStatusBadge";
 import { Edit } from "lucide-react";
 
 interface EventStatusDisplayProps {
@@ -7,7 +7,7 @@ interface EventStatusDisplayProps {
   onEditClick: () => void;
 }
 
-export function EventStatusDisplay({ event, onEditClick }: EventStatusDisplayProps) {
+export default function EventStatusDisplay({ event, onEditClick }: EventStatusDisplayProps) {
   return (
     <div className="flex items-center justify-between p-4 bg-muted/20 rounded-lg border">
       <div className="flex items-center gap-3">

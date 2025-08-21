@@ -38,7 +38,7 @@ export async function GET() {
           )
         )
       `)
-      .in('status', ['PUBLISHED', 'ACTIVE', 'LIVE', 'COMPLETED'])
+      .in('status', ['ACTIVE', 'LIVE', 'COMPLETED'])
       .order('createdAt', { ascending: false });
 
     if (error) {

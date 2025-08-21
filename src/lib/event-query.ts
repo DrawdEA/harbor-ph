@@ -85,8 +85,7 @@ export const fetchEvents = async ({ pageParam = 0 }: { pageParam?: number }) => 
 					)
 				)
 			`)
-			// .eq('status', 'PUBLISHED') // Temporarily commented out for testing
-			// .gte('endTime', new Date().toISOString()) // Temporarily commented out for testing
+			.in('status', ['ACTIVE', 'LIVE', 'COMPLETED']) // Only show public events
 			.order('createdAt', { ascending: false }) // Order by creation date for now
 			.range(start, start + pageSize - 1);
 

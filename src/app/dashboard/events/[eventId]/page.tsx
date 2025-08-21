@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Clock, Users, Calendar, DollarSign, TrendingUp, BarChart3, Settings } from "lucide-react";
 import { fetchEventById, Event } from "@/lib/event-query";
 import Link from "next/link";
-import { EventStatusDisplay } from "@/components/event/EventStatusDisplay";
+import EventStatusDisplay from "@/components/event/EventStatusDisplay";
 import EventEditModal from "@/components/event/EventEditModal";
 
 export default function DashboardEventDetailPage() {
