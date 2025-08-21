@@ -43,6 +43,9 @@ export default function Feed() {
 		};
 	}, [hasNextPage, fetchNextPage]);
 
+	// Check if there are any events across all pages
+	const hasAnyEvents = data?.pages.some(page => page.events && page.events.length > 0);
+
 	return (
 		<div className="mx-auto max-w-3xl">
 			<div className="grid grid-cols-1 gap-4 sm:gap-6">
@@ -54,21 +57,23 @@ export default function Feed() {
 					</>
 				) : status === "error" ? (
 					<p className="col-span-full text-center text-primary">Error: {error.message}</p>
+				) : !hasAnyEvents ? (
+					// Show "No events found" only when there are truly no events
+					<p className="col-span-full text-center text-gray-500 py-8">
+						No events found. Create the first event at Harbor!
+					</p>
 				) : (
+					// Render all events from all pages
 					data.pages.map((page, i) => (
 						<React.Fragment key={i}>
-							{page.events && page.events.length > 0 ? (
+							{page.events && page.events.length > 0 && 
 								page.events.map((event) => (
 									<EventCard 
 										key={event.id} 
 										event={event}
 									/>
 								))
-							) : (
-								<p className="col-span-full text-center text-gray-500 py-8">
-									No events found. Create the first event at Harbor!
-								</p>
-							)}
+							}
 						</React.Fragment>
 					))
 				)}
@@ -81,7 +86,7 @@ export default function Feed() {
 				)}
 			</div>
 			<div ref={observerRef} style={{ height: "1px" }}></div>
-			{!hasNextPage && status === "success" && (
+			{!hasNextPage && status === "success" && hasAnyEvents && (
 				<p className="mt-8 text-center text-gray-500">
 					You&apos;ve reached the last event! Host yours at Harbor.
 				</p>
