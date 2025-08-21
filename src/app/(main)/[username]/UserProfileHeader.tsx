@@ -17,7 +17,7 @@ interface UserProfileHeaderProps {
 export default function UserProfileHeader({ profile, activeTab, setActiveTab }: UserProfileHeaderProps) {
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const router = useRouter();
-  const tabs = ["Home", "Portfolio", "Attended"];
+  const tabs = ["Home", "Bookings", "Attended"];
 
   // Get current user on component mount
   useEffect(() => {

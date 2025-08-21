@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import CategoryBadge from "./CategoryBadge";
 import EventStatusBadge from "./EventStatusBadge";
+import { useState } from "react";
+import EventRegistrationModal from "./EventRegistrationModal";
 
 // Default placeholder image for events without custom images
 const DEFAULT_EVENT_IMAGE = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80";
@@ -48,13 +50,24 @@ export type FeedEventCardData = {
 
 interface FeedEventCardProps {
 	event: FeedEventCardData;
+	showRegistrationButton?: boolean; // New prop to control registration button visibility
 }
 
-export default function EventCard({ event }: FeedEventCardProps) {
+export default function EventCard({ event, showRegistrationButton = true }: FeedEventCardProps) {
+	const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
+	
 	if (!event) {
 		console.warn('EventCard received undefined/null event');
 		return null;
 	}
+
+	// Debug logging
+	console.log('EventCard received event:', event);
+	console.log('Event ticket_types:', event.ticket_types);
+	console.log('Show registration button:', showRegistrationButton);
+	console.log('Has tickets:', event.ticket_types && event.ticket_types.length > 0);
+	console.log('Event status:', event.status);
+	console.log('Event ID:', event.id);
 
 	const title = event.title || event.eventName || 'Event';
 	const description = event.description || event.eventType || 'No description available';
@@ -193,8 +206,22 @@ export default function EventCard({ event }: FeedEventCardProps) {
 					)}
 				</div>
 				
-				{/* View Details Button */}
-				<div className="flex justify-end">
+				{/* Action Buttons */}
+				<div className="flex justify-end space-x-2">
+					{/* Registration Button - Show for events with tickets (temporarily show for all for testing) */}
+					{showRegistrationButton && (
+						<Button 
+							variant="outline" 
+							size="sm" 
+							onClick={() => setIsRegistrationModalOpen(true)}
+							className="flex items-center gap-2 text-xs"
+						>
+							<Users className="h-3 w-3" />
+							Register
+						</Button>
+					)}
+					
+					{/* View Details Button */}
 					<Button 
 						variant="default" 
 						size="sm" 
@@ -208,6 +235,24 @@ export default function EventCard({ event }: FeedEventCardProps) {
 					</Button>
 				</div>
 			</div>
+			
+			{/* Registration Modal - Only render when needed */}
+			{showRegistrationButton && (
+				<EventRegistrationModal
+					isOpen={isRegistrationModalOpen}
+					onClose={() => setIsRegistrationModalOpen(false)}
+					event={{
+						id: event.id as string,
+						title: title,
+						description: description,
+						startTime: event.startTime || '',
+						endTime: event.endTime || '',
+						imageUrl: displayImageUrl,
+						venues: event.venues || [],
+						ticket_types: event.ticket_types || []
+					}}
+				/>
+			)}
 		</div>
 	);
 }

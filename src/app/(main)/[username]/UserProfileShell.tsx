@@ -9,9 +9,10 @@ interface UserProfileShellProps {
   header: React.ReactNode;
   homeContent: React.ReactNode;
   portfolioContent: React.ReactNode;
+  bookingsContent: React.ReactNode; // New prop for bookings
 }
 
-export default function UserProfileShell({ header, homeContent, portfolioContent }: UserProfileShellProps) {
+export default function UserProfileShell({ header, homeContent, portfolioContent, bookingsContent }: UserProfileShellProps) {
   const [activeTab, setActiveTab] = useState("Home");
 
   // Extract the profile from the header prop
@@ -30,8 +31,8 @@ export default function UserProfileShell({ header, homeContent, portfolioContent
 
           <main className="px-2 sm:px-4 md:px-6 lg:px-8 pb-4 sm:pb-6 md:pb-8">
             {activeTab === 'Home' && homeContent}
-            {activeTab === 'Portfolio' && portfolioContent}
-            {/* attended component if needed */}
+            {activeTab === 'Bookings' && bookingsContent}
+            {activeTab === 'Portfolio' && portfolioContent} {/* Keep for backward compatibility */}
           </main>
         </CardContent>
       </Card>

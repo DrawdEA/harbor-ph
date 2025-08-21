@@ -23,6 +23,7 @@ const navTabs = [
 	{ label: "For You", href: "/" },
 	{ label: "People", href: "/people" },
 	{ label: "Events", href: "/events" },
+	{ label: "Bookings", href: "/bookings" },
 ];
 
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -85,11 +86,21 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 		};
 		initials = getInitials(fullName);
 
-		profileMenuItems = [
-			{ label: "View Profile", icon: User, href: `/${metadata.username}` },
-			{ label: "Premium", icon: Crown, href: "/coming-soon" },
-			{ label: "Settings", icon: Settings, href: "/settings" },
-		];
+		// Only show Bookings for regular users, not organizations
+		if (!isOrganization) {
+			profileMenuItems = [
+				{ label: "View Profile", icon: User, href: `/${metadata.username}` },
+				{ label: "My Bookings", icon: Bell, href: "/bookings" },
+				{ label: "Premium", icon: Crown, href: "/coming-soon" },
+				{ label: "Settings", icon: Settings, href: "/settings" },
+			];
+		} else {
+			profileMenuItems = [
+				{ label: "View Profile", icon: User, href: `/${metadata.username}` },
+				{ label: "Premium", icon: Crown, href: "/coming-soon" },
+				{ label: "Settings", icon: Settings, href: "/settings" },
+			];
+		}
 	}
 	
 

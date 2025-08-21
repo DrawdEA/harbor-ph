@@ -8,6 +8,7 @@ import { fetchEventById, Event } from "@/lib/event-query";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
 import Image from "next/image";
+import EventRegistrationModal from "@/components/event/EventRegistrationModal";
 
 export default function EventDetailPage() {
 	const params = useParams();
@@ -17,7 +18,7 @@ export default function EventDetailPage() {
 	const [event, setEvent] = useState<Event | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [isRegistering, setIsRegistering] = useState(false);
+	const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
 
 	useEffect(() => {
 		const loadEvent = async () => {
@@ -38,24 +39,8 @@ export default function EventDetailPage() {
 		loadEvent();
 	}, [eventId]);
 
-	const handleRegister = async () => {
-		if (!event) return;
-		
-		setIsRegistering(true);
-		try {
-			// TODO: Implement actual registration logic
-			console.log('Registering for event:', event.id);
-			
-			// Simulate API call
-			await new Promise(resolve => setTimeout(resolve, 1000));
-			
-			alert('Successfully registered for the event!');
-		} catch (error) {
-			console.error('Registration failed:', error);
-			alert('Registration failed. Please try again.');
-		} finally {
-			setIsRegistering(false);
-		}
+	const handleRegister = () => {
+		setIsRegistrationModalOpen(true);
 	};
 
 	const formatDate = (dateString: string) => {
@@ -256,11 +241,10 @@ export default function EventDetailPage() {
 							<div className="space-y-4 pt-6">
 								<Button 
 									onClick={handleRegister} 
-									disabled={isRegistering}
 									className="w-full bg-primary hover:bg-primary/90 text-white"
 									size="lg"
 								>
-									{isRegistering ? 'Registering...' : 'Register for Event'}
+									Register for Event
 								</Button>
 								
 								<div className="flex gap-3">
@@ -305,6 +289,12 @@ export default function EventDetailPage() {
 					</div>
 				</div>
 			</div>
+
+			<EventRegistrationModal 
+				isOpen={isRegistrationModalOpen} 
+				onClose={() => setIsRegistrationModalOpen(false)} 
+				event={event} 
+			/>
 		</div>
 	);
 }

@@ -6,6 +6,7 @@ import UserProfileShell from "./UserProfileShell";
 import UserProfileHeader from "./UserProfileHeader";
 import Home from "./Home";
 import Portfolio from "./Portfolio";
+import ProfileBookings from "./ProfileBookings";
 
 // ✨ CHANGE 1: The function now receives a `params` object from Next.js
 interface DynamicProfilePageProps {
@@ -32,6 +33,7 @@ export default async function DynamicProfilePage({ params }: DynamicProfilePageP
 			header={<UserProfileHeader profile={profile} />} 
 			homeContent={<Home />}
 			portfolioContent={<Portfolio profile={profile} />}
+			bookingsContent={<ProfileBookings userId={profile.id} />}
 		/>
 	);
 }
