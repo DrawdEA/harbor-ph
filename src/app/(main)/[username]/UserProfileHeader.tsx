@@ -52,7 +52,7 @@ export default function UserProfileHeader({ profile, activeTab, setActiveTab }: 
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col items-center p-2 sm:p-4 md:p-6">
+    <div className="w-full mx-auto flex flex-col items-center p-2 sm:p-4 md:px-10">
       <div className="flex flex-col md:flex-row items-center md:items-start w-full gap-3 sm:gap-4 md:gap-8">
         
         {/* --- Avatar Section --- */}
