@@ -9,11 +9,31 @@ export default async function Home() {
 
 	const { data: { user } } = await supabase.auth.getUser();
 
-	const { data: profile } = await supabase
-		.from('user_profiles')
-		.select('*')
-		.eq('id', user?.id)
-		.single();
+	let profile = null;
+
+	if (user) {
+		// First try to get user profile
+		const { data: userProfile } = await supabase
+			.from('user_profiles')
+			.select('*')
+			.eq('id', user.id)
+			.single();
+
+		if (userProfile) {
+			profile = { ...userProfile, accountType: 'personal' };
+		} else {
+			// If no user profile, try to get organization profile
+			const { data: orgProfile } = await supabase
+				.from('organization_profiles')
+				.select('*')
+				.eq('id', user.id)
+				.single();
+
+			if (orgProfile) {
+				profile = { ...orgProfile, accountType: 'organization' };
+			}
+		}
+	}
 
 	return (
 		<div className="bg-muted/40 min-h-screen">
@@ -25,7 +45,7 @@ export default async function Home() {
 							<Footer />
 						</div>
 					</aside>
-					<main className="col-span-1 lg:col-span-6 xl:col-span-7">
+					<main className="col-span-1 lg:grid-cols-6 xl:col-span-7">
 						<Feed />
 					</main>
 					<aside className="hidden lg:block lg:col-span-3 xl:col-span-3">
