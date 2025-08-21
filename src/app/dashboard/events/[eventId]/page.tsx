@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Clock, Users, Calendar, DollarSign, TrendingUp, BarChart3, Settings } from "lucide-react";
 import { fetchEventById, Event } from "@/lib/event-query";
 import Link from "next/link";
+import { EventStatusDisplay } from "@/components/event/EventStatusDisplay";
+import EventEditModal from "@/components/event/EventEditModal";
 
 export default function DashboardEventDetailPage() {
 	const params = useParams();
@@ -18,6 +20,7 @@ export default function DashboardEventDetailPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState("main-dashboard");
+	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
 	useEffect(() => {
 		const loadEvent = async () => {
@@ -37,6 +40,15 @@ export default function DashboardEventDetailPage() {
 
 		loadEvent();
 	}, [eventId]);
+
+	const handleEditClick = () => {
+		setIsEditModalOpen(true);
+	};
+
+	const handleEventUpdated = () => {
+		// Refresh the event data
+		window.location.reload();
+	};
 
 	const formatDate = (dateString: string) => {
 		try {
@@ -110,17 +122,16 @@ export default function DashboardEventDetailPage() {
 							<h1 className="text-3xl font-bold text-gray-900">{event.title}</h1>
 							<p className="text-gray-600 mt-1">Event Management Dashboard</p>
 						</div>
-						<div className="flex items-center space-x-2">
-							<span className={`px-3 py-1 text-sm rounded-full font-medium ${
-								event.status === 'PUBLISHED' 
-									? 'bg-green-100 text-green-800' 
-									: 'bg-yellow-100 text-yellow-800'
-							}`}>
-								{event.status}
-							</span>
-						</div>
 					</div>
 				</div>
+			</div>
+
+			{/* Status Display & Edit Section */}
+			<div className="mx-auto px-4">
+				<EventStatusDisplay 
+					event={event} 
+					onEditClick={handleEditClick}
+				/>
 			</div>
 
 			{/* Main Content */}
@@ -380,6 +391,14 @@ export default function DashboardEventDetailPage() {
 					</TabsContent>
 				</Tabs>
 			</div>
+
+			{/* Edit Modal */}
+			<EventEditModal
+				isOpen={isEditModalOpen}
+				onClose={() => setIsEditModalOpen(false)}
+				event={event}
+				onEventUpdated={handleEventUpdated}
+			/>
 		</div>
 	);
 }

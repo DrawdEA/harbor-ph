@@ -57,6 +57,12 @@ export default function EventCard({ event }: FeedEventCardProps) {
 	const imageUrl = event.imageUrl || event.imageSrc;
 	const imageAlt = event.imageAlt || title;
 	
+	// Default placeholder image for events without custom images
+	const defaultImageUrl = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80";
+	
+	// Use custom image if available, otherwise use default
+	const displayImageUrl = imageUrl || defaultImageUrl;
+	
 	const hasRealData = event.startTime && event.endTime;
 	const hasMockData = event.date && event.time;
 	
@@ -98,13 +104,13 @@ export default function EventCard({ event }: FeedEventCardProps) {
 	return (
 		<div className="flex flex-col space-y-3 rounded-lg bg-white p-4 shadow-sm">
 			{/* Image */}
-			{imageUrl ? (
+			{displayImageUrl ? (
 				<img 
-					src={imageUrl} 
+					src={displayImageUrl} 
 					alt={imageAlt}
 					className="h-40 w-full rounded-lg object-cover"
 					onError={(e) => {
-						console.warn('Failed to load image:', imageUrl);
+						console.warn('Failed to load image:', displayImageUrl);
 					}}
 				/>
 			) : (

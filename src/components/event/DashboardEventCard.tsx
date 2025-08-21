@@ -47,6 +47,12 @@ export default function DashboardEventCard({ event, onEdit, onDelete }: Dashboar
 	const description = event.description || 'No description available';
 	const imageUrl = event.imageUrl;
 	
+	// Default placeholder image for events without custom images
+	const defaultImageUrl = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80";
+	
+	// Use custom image if available, otherwise use default
+	const displayImageUrl = imageUrl || defaultImageUrl;
+
 	const formatDate = (dateString: string) => {
 		try {
 			return new Date(dateString).toLocaleDateString('en-US', {
@@ -101,49 +107,31 @@ export default function DashboardEventCard({ event, onEdit, onDelete }: Dashboar
 		<Card className="font-roboto border-muted bg-background hover:shadow-md transition-all duration-200 group">
 			<CardContent className="px-6">
 				{/* Banner Image */}
-				{imageUrl ? (
-					<div className="relative h-44 w-full overflow-hidden rounded-lg mb-3">
-						<Image 
-							src={imageUrl} 
-							alt={title}
-							fill
-							className="object-cover"
-							sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-							onError={(e) => {
-								console.warn('Failed to load image:', imageUrl);
-							}}
-						/>
-						<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
-						
-						{/* Status Badge Overlay */}
-						{event.status && (
-							<div className="absolute top-3 right-3">
-								<Badge 
-									variant="outline" 
-									className={`${getStatusColor(event.status)} text-xs font-medium backdrop-blur-sm bg-white/90`}
-								>
-									{event.status}
-								</Badge>
-							</div>
-						)}
-					</div>
-				) : (
-					<div className="h-44 w-full bg-muted flex items-center justify-center relative rounded-lg mb-3">
-						<ImageIcon className="w-16 h-16 text-muted-foreground" />
-						
-						{/* Status Badge Overlay */}
-						{event.status && (
-							<div className="absolute top-3 right-3">
-								<Badge 
-									variant="outline" 
-									className={`${getStatusColor(event.status)} text-xs font-medium`}
-								>
-									{event.status}
-								</Badge>
-							</div>
-						)}
-					</div>
-				)}
+				<div className="relative h-44 w-full overflow-hidden rounded-lg mb-3">
+					<Image 
+						src={displayImageUrl} 
+						alt={title}
+						fill
+						className="object-cover"
+						sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+						onError={(e) => {
+							console.warn('Failed to load image:', displayImageUrl);
+						}}
+					/>
+					<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
+					
+					{/* Status Badge Overlay */}
+					{event.status && (
+						<div className="absolute top-3 right-3">
+							<Badge 
+								variant="outline" 
+								className={`${getStatusColor(event.status)} text-xs font-medium backdrop-blur-sm bg-white/90`}
+							>
+								{event.status}
+							</Badge>
+						</div>
+					)}
+				</div>
 				{/* Header with Title */}
 				<div className="mb-2">
 					<h3 className="text-xl font-bold text-foreground truncate">

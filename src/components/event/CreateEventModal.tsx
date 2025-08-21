@@ -62,6 +62,9 @@ const eventFormSchema = z.object({
 
 type EventFormData = z.infer<typeof eventFormSchema>;
 
+// Default placeholder image for events without custom images
+const DEFAULT_EVENT_IMAGE = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80";
+
 export default function CreateEventModal() {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
@@ -174,7 +177,7 @@ export default function CreateEventModal() {
 			console.log('Creating event with data:', {
 				title: data.title,
 				description: data.description,
-				imageUrl: uploadedImageUrl,
+				imageUrl: uploadedImageUrl || DEFAULT_EVENT_IMAGE,
 				startTime: data.startTime,
 				endTime: data.endTime,
 				status: data.status,
@@ -192,7 +195,7 @@ export default function CreateEventModal() {
 					id: eventId,  // Add the generated ID
 					title: data.title,
 					description: data.description,
-					imageUrl: uploadedImageUrl,
+					imageUrl: uploadedImageUrl || DEFAULT_EVENT_IMAGE, // Always provide an image URL
 					startTime: new Date(data.startTime).toISOString(),
 					endTime: new Date(data.endTime).toISOString(),
 					status: data.status,
@@ -363,6 +366,27 @@ export default function CreateEventModal() {
 												onCategoriesChange={field.onChange}
 												placeholder="Select event categories..."
 											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							
+							{/* Event Status */}
+							<FormField
+								control={form.control}
+								name="status"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Event Status</FormLabel>
+										<FormControl>
+											<select
+												{...field}
+												className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+											>
+												<option value="DRAFT">Draft (Private - Only you can see)</option>
+												<option value="PUBLISHED">Published (Public - Everyone can see, no registration yet)</option>
+											</select>
 										</FormControl>
 										<FormMessage />
 									</FormItem>

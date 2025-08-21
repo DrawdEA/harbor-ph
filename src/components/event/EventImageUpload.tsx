@@ -1,259 +1,171 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Image as ImageIcon, Upload, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 
 interface EventImageUploadProps {
   currentImageUrl: string | null;
   eventTitle: string;
-  onImageUpdate: (newUrl: string | null) => void;
+  onImageUpdate: (imageUrl: string | null) => void;
 }
 
-export default function EventImageUpload({ 
-  currentImageUrl, 
-  eventTitle, 
-  onImageUpdate 
-}: EventImageUploadProps) {
+export default function EventImageUpload({ currentImageUrl, eventTitle, onImageUpdate }: EventImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Ensure component only runs on client side
-  useEffect(() => {
-    setIsClient(true);
-    setPreviewUrl(currentImageUrl);
-  }, [currentImageUrl]);
+  // Default placeholder image - you can replace this with your own image
+  const defaultImageUrl = "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80";
 
-  // Don't render until client side to avoid hydration mismatch
-  if (!isClient) {
-    return (
-      <div className="space-y-4">
-        <div>
-          <label className="text-sm font-medium">Event Image</label>
-          <p className="text-sm text-muted-foreground mb-3">
-            Choose a JPG, PNG, or GIF file under 10MB
-          </p>
-          <div className="w-full h-48 rounded-lg bg-muted flex items-center justify-center border-2 border-muted">
-            <ImageIcon className="w-16 h-16 text-muted-foreground" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file');
+      alert('Please select an image file');
       return;
     }
 
-    // Validate file size (max 10MB for event images)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Image size must be less than 10MB');
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB');
       return;
     }
-
-    setError(null);
-    
-    // Create preview URL immediately
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewUrl(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Automatically upload the file
-    await handleUpload(file);
-  };
-
-  const handleUpload = async (file?: File) => {
-    const fileToUpload = file || fileInputRef.current?.files?.[0];
-    if (!fileToUpload) return;
 
     setIsUploading(true);
-    setError(null);
-    setSuccess(false);
+    setUploadProgress(0);
 
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
       // Generate unique filename
-      const fileExt = fileToUpload.name.split('.').pop();
-      const fileName = `event-${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `event-images/${fileName}`;
-
+      const timestamp = Date.now();
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `event-${eventTitle.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${timestamp}.${fileExtension}`;
+      
       // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars') // Using the same bucket as profile pictures
-        .upload(filePath, fileToUpload, {
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false
         });
 
-      if (uploadError) {
-        throw uploadError;
+      if (error) {
+        throw new Error(`Upload failed: ${error.message}`);
       }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
-      // Delete old event image if it exists
-      if (currentImageUrl && currentImageUrl !== publicUrl) {
-        const oldFilePath = currentImageUrl.split('/').pop();
-        if (oldFilePath) {
-          await supabase.storage
-            .from('avatars')
-            .remove([`event-images/${oldFilePath}`]);
-        }
-      }
-
-      setSuccess(true);
+      // Update parent component
       onImageUpdate(publicUrl);
+      setUploadProgress(100);
       
-      // Reset form
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
+      // Reset progress after a moment
+      setTimeout(() => setUploadProgress(0), 1000);
 
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to upload image';
-      setError(errorMessage);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleRemove = async () => {
-    setIsUploading(true);
-    setError(null);
-
-    try {
-      // Delete from storage if exists
-      if (currentImageUrl) {
-        const supabase = createClient();
-        const filePath = currentImageUrl.split('/').pop();
-        if (filePath) {
-          await supabase.storage
-            .from('avatars')
-            .remove([`event-images/${filePath}`]);
-        }
-      }
-
-      setPreviewUrl(null);
-      onImageUpdate(null);
-      setSuccess(true);
-      
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
-
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to remove image';
-      setError(errorMessage);
-    } finally {
-      setIsUploading(false);
-    }
+  const handleRemoveImage = () => {
+    onImageUpdate(null);
   };
 
-
+  // Determine what image to show
+  const displayImageUrl = currentImageUrl || defaultImageUrl;
+  const isDefaultImage = !currentImageUrl;
 
   return (
     <div className="space-y-4">
-      <div>
-        <label className="text-sm font-medium">Event Image</label>
-        <p className="text-sm text-muted-foreground mb-3">
-          Choose a JPG, PNG, or GIF file under 10MB
-        </p>
-        
-        {/* Image Preview */}
-        <div className="mb-4">
-          {previewUrl ? (
-            <div className="w-full h-48 rounded-lg overflow-hidden border-2 border-muted">
-              <Image
-                src={previewUrl}
-                alt={`${eventTitle} event image`}
-                width={400}
-                height={200}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : (
-            <div className="w-full h-48 rounded-lg bg-muted flex items-center justify-center border-2 border-muted">
-              <ImageIcon className="w-16 h-16 text-muted-foreground" />
+      <Label className="text-sm font-medium">Event Image</Label>
+      
+      {/* Image Display */}
+      <div className="relative">
+        <div className="relative h-48 w-full overflow-hidden rounded-lg border">
+          <Image
+            src={displayImageUrl}
+            alt={isDefaultImage ? "Default event image" : eventTitle}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+          
+          {/* Overlay for default image */}
+          {isDefaultImage && (
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+              <div className="text-center text-white">
+                <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-80" />
+                <p className="text-sm font-medium">Default Event Image</p>
+              </div>
             </div>
           )}
         </div>
         
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-        
-        <div className="flex gap-3">
+        {/* Remove button - only show when user has uploaded an image */}
+        {currentImageUrl && (
           <Button
             type="button"
-            variant="secondary"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2"
-            disabled={isUploading}
+            variant="destructive"
+            size="sm"
+            onClick={handleRemoveImage}
+            className="absolute top-2 right-2 h-8 w-8 p-0"
           >
-            <Upload className="w-4 h-4" />
-            {isUploading ? 'Uploading...' : 'Choose Image'}
+            <X className="h-4 w-4" />
           </Button>
-          
-          {previewUrl && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleRemove}
-              disabled={isUploading}
-              className="flex items-center gap-2"
-            >
-              <X className="w-4 h-4" />
-              Remove
-            </Button>
-          )}
-        </div>
+        )}
       </div>
 
-
-
-      {/* Messages */}
-      {error && (
-        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-          <p className="text-sm text-destructive">{error}</p>
+      {/* Upload Section */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            disabled={isUploading}
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isUploading}
+            onClick={() => document.querySelector('input[type="file"]')?.click()}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {isUploading ? 'Uploading...' : 'Choose File'}
+          </Button>
         </div>
-      )}
-      
-      {success && (
-        <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-md">
-          <p className="text-sm text-green-600">Event image uploaded successfully!</p>
-        </div>
-      )}
+
+        {/* Upload Progress */}
+        {isUploading && (
+          <div className="w-full bg-muted rounded-full h-2">
+            <div 
+              className="bg-primary h-2 rounded-full transition-all duration-300"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        )}
+
+        {/* Help Text */}
+        <p className="text-xs text-muted-foreground">
+          Supported formats: JPG, PNG, GIF. Max size: 5MB. 
+          {!currentImageUrl && ' Upload an image to make your event more attractive!'}
+        </p>
+      </div>
     </div>
   );
 }
