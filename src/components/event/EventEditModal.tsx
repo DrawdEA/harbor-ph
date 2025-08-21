@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CategorySelector from "@/components/event/CategorySelector";
 import EventImageUpload from "@/components/event/EventImageUpload";
+import TicketManagement from "@/components/event/TicketManagement";
 import {
 	Dialog,
 	DialogContent,
@@ -43,12 +44,7 @@ const eventEditSchema = z.object({
 	country: z.string().min(1, "Country is required"),
 	postalCode: z.string().optional(),
 	
-	// Ticket type (optional)
-	ticketName: z.string().optional(),
-	ticketPrice: z.string().optional(),
-	ticketQuantity: z.string().optional(),
-	salesStartDate: z.string().optional(),
-	salesEndDate: z.string().optional()
+
 }).refine((data) => {
 	// Custom validation: end time must be after start time
 	if (data.startTime && data.endTime) {
@@ -91,11 +87,7 @@ export default function EventEditModal({ isOpen, onClose, event, onEventUpdated 
 			province: event?.venues?.[0]?.province || "",
 			country: event?.venues?.[0]?.country || "",
 			postalCode: event?.venues?.[0]?.postalCode || "",
-			ticketName: event?.ticket_types?.[0]?.name || "",
-			ticketPrice: event?.ticket_types?.[0]?.price?.toString() || "",
-			ticketQuantity: event?.ticket_types?.[0]?.quantity?.toString() || "",
-			salesStartDate: event?.ticket_types?.[0]?.salesStartDate ? new Date(event.ticket_types[0].salesStartDate).toISOString().slice(0, 16) : "",
-			salesEndDate: event?.ticket_types?.[0]?.salesEndDate ? new Date(event.ticket_types[0].salesEndDate).toISOString().slice(0, 16) : ""
+
 		}
 	});
 
@@ -597,98 +589,17 @@ export default function EventEditModal({ isOpen, onClose, event, onEventUpdated 
 								</div>
 							</div>
 
-							{/* Ticket Information */}
-							<div className="space-y-4">
-								<h3 className="text-lg font-medium">Ticket Information (Optional)</h3>
-								<div className="grid gap-4 md:grid-cols-2">
-									<FormField
-										control={form.control}
-										name="ticketName"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Ticket Name</FormLabel>
-												<FormControl>
-													<Input 
-														placeholder="e.g., General Admission"
-														{...field}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-									<FormField
-										control={form.control}
-										name="ticketPrice"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Ticket Price</FormLabel>
-												<FormControl>
-													<Input 
-														type="number"
-														step="0.01"
-														placeholder="0.00"
-														{...field}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-								</div>
-								
-								<div className="grid gap-4 md:grid-cols-3">
-									<FormField
-										control={form.control}
-										name="ticketQuantity"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Available Quantity</FormLabel>
-												<FormControl>
-													<Input 
-														type="number"
-														placeholder="100"
-														{...field}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-									<FormField
-										control={form.control}
-										name="salesStartDate"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Sales Start Date</FormLabel>
-												<FormControl>
-													<Input 
-														type="datetime-local"
-														{...field}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-									<FormField
-										control={form.control}
-										name="salesEndDate"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Sales End Date</FormLabel>
-												<FormControl>
-													<Input 
-														type="datetime-local"
-														{...field}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-								</div>
-							</div>
+														{/* Ticket Management */}
+							<TicketManagement 
+								eventId={event.id} 
+								onTicketsChange={async (hasTickets) => {
+									console.log('Tickets configured:', hasTickets);
+									// Refresh available status transitions when tickets change
+									if (hasTickets) {
+										await fetchAvailableTransitions();
+									}
+								}}
+							/>
 						</div>
 
 						{/* Footer Actions */}

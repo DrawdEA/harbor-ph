@@ -5,11 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Clock, Users, Calendar, DollarSign, TrendingUp, BarChart3, Settings } from "lucide-react";
+import { MapPin, Clock, Users, Calendar, DollarSign, TrendingUp, BarChart3 } from "lucide-react";
 import { fetchEventById, Event } from "@/lib/event-query";
 import Link from "next/link";
 import EventStatusDisplay from "@/components/event/EventStatusDisplay";
 import EventEditModal from "@/components/event/EventEditModal";
+import TicketManagement from "@/components/event/TicketManagement";
 
 export default function DashboardEventDetailPage() {
 	const params = useParams();
@@ -18,6 +19,7 @@ export default function DashboardEventDetailPage() {
 	
 	const [event, setEvent] = useState<Event | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [ticketRefreshing, setTicketRefreshing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState("main-dashboard");
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -48,6 +50,19 @@ export default function DashboardEventDetailPage() {
 	const handleEventUpdated = () => {
 		// Refresh the event data
 		window.location.reload();
+	};
+
+	const refreshEventData = async () => {
+		try {
+			setLoading(true);
+			const updatedEventData = await fetchEventById(eventId);
+			setEvent(updatedEventData);
+			console.log('Manual refresh completed:', updatedEventData);
+		} catch (err) {
+			console.error('Error refreshing event data:', err);
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const formatDate = (dateString: string) => {
@@ -122,6 +137,14 @@ export default function DashboardEventDetailPage() {
 							<h1 className="text-3xl font-bold text-gray-900">{event.title}</h1>
 							<p className="text-gray-600 mt-1">Event Management Dashboard</p>
 						</div>
+						<Button 
+							variant="outline" 
+							size="sm" 
+							onClick={refreshEventData}
+							disabled={loading || ticketRefreshing}
+						>
+							{loading || ticketRefreshing ? 'Refreshing...' : 'Refresh Data'}
+						</Button>
 					</div>
 				</div>
 			</div>
@@ -137,11 +160,16 @@ export default function DashboardEventDetailPage() {
 			{/* Main Content */}
 			<div className="mx-auto px-4 py-6">
 				<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-					<TabsList className="grid w-full grid-cols-3">
+					<TabsList className="grid w-full grid-cols-4">
 						<TabsTrigger value="main-dashboard" className="flex items-center space-x-2">
 							<BarChart3 className="h-4 w-4" />
 							<span className="hidden sm:inline">Main Dashboard</span>
 							<span className="sm:hidden">Dashboard</span>
+						</TabsTrigger>
+						<TabsTrigger value="tickets" className="flex items-center space-x-2">
+							<Users className="h-4 w-4" />
+							<span className="hidden sm:inline">Tickets</span>
+							<span className="sm:hidden">Tickets</span>
 						</TabsTrigger>
 						<TabsTrigger value="expenses" className="flex items-center space-x-2">
 							<DollarSign className="h-4 w-4" />
@@ -302,6 +330,32 @@ export default function DashboardEventDetailPage() {
 								</CardContent>
 							</Card>
 						)}
+					</TabsContent>
+
+					{/* Tickets Tab */}
+					<TabsContent value="tickets" className="space-y-6">
+						{ticketRefreshing && (
+							<div className="text-center py-2 text-sm text-muted-foreground">
+								Refreshing ticket data...
+							</div>
+						)}
+						<TicketManagement 
+							eventId={event.id} 
+							onTicketsChange={async (hasTickets) => {
+								console.log('Tickets configured:', hasTickets);
+								// Refresh only the ticket data without affecting the main page loading state
+								try {
+									setTicketRefreshing(true);
+									const updatedEventData = await fetchEventById(eventId);
+									setEvent(updatedEventData);
+									console.log('Ticket data refreshed:', updatedEventData);
+								} catch (err) {
+									console.error('Error refreshing ticket data:', err);
+								} finally {
+									setTicketRefreshing(false);
+								}
+							}}
+						/>
 					</TabsContent>
 
 					{/* Breakdown of Expenses Tab */}
