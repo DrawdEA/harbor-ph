@@ -3,37 +3,30 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { v4 as uuidv4 } from "uuid";
-import EventImageUpload from "@/components/event/EventImageUpload";
-import CategorySelector from "@/components/event/CategorySelector";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Plus, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useCreateEventModal } from "./CreateEventModalContext";
+import { createClient } from "@/lib/supabase/client";
+import { v4 as uuidv4 } from "uuid";
+import EventImageUpload from "./EventImageUpload";
+import CategorySelector from "./CategorySelector";
 
-// Zod schema for form validation
 const eventFormSchema = z.object({
-	// Event details
-	title: z.string().min(1, "Event title is required").min(3, "Title must be at least 3 characters"),
-	description: z.string().min(1, "Description is required").min(10, "Description must be at least 10 characters"),
+	title: z.string().min(1, "Title is required"),
+	description: z.string().min(1, "Description is required"),
 	startTime: z.string().min(1, "Start time is required"),
 	endTime: z.string().min(1, "End time is required"),
-	status: z.enum(["DRAFT", "PUBLISHED"]),
-	categories: z.array(z.string()).min(1, "Please select at least one category"),
-	
-	// Venue details
+	status: z.string().default("DRAFT"),
+	categories: z.array(z.string()).min(1, "At least one category is required"),
 	venueName: z.string().min(1, "Venue name is required"),
 	address: z.string().min(1, "Address is required"),
 	city: z.string().min(1, "City is required"),
@@ -43,12 +36,14 @@ const eventFormSchema = z.object({
 	latitude: z.string().optional(),
 	longitude: z.string().optional(),
 	
-	// Ticket type (optional)
-	ticketName: z.string().optional(),
-	ticketPrice: z.string().optional(),
-	ticketQuantity: z.string().optional(),
-	salesStartDate: z.string().optional(),
-	salesEndDate: z.string().optional()
+	// Multiple ticket types
+	ticketTypes: z.array(z.object({
+		name: z.string().min(1, "Ticket name is required"),
+		price: z.string().min(1, "Price is required"),
+		quantity: z.string().min(1, "Quantity is required"),
+		salesStartDate: z.string().optional(),
+		salesEndDate: z.string().optional()
+	})).optional(),
 }).refine((data) => {
 	// Custom validation: end time must be after start time
 	if (data.startTime && data.endTime) {
@@ -69,7 +64,39 @@ export default function CreateEventModal() {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
 	const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+	const [ticketTypes, setTicketTypes] = useState([
+		{
+			name: "",
+			price: "",
+			quantity: "",
+			salesStartDate: "",
+			salesEndDate: ""
+		}
+	]);
 	const { isOpen, closeModal } = useCreateEventModal();
+
+	// Helper functions for managing ticket types
+	const addTicketType = () => {
+		setTicketTypes([...ticketTypes, {
+			name: "",
+			price: "",
+			quantity: "",
+			salesStartDate: "",
+			salesEndDate: ""
+		}]);
+	};
+
+	const removeTicketType = (index: number) => {
+		if (ticketTypes.length > 1) {
+			setTicketTypes(ticketTypes.filter((_, i) => i !== index));
+		}
+	};
+
+	const updateTicketType = (index: number, field: string, value: string) => {
+		const updated = [...ticketTypes];
+		updated[index] = { ...updated[index], [field]: value };
+		setTicketTypes(updated);
+	};
 
 	const form = useForm<EventFormData>({
 		resolver: zodResolver(eventFormSchema),
@@ -88,11 +115,7 @@ export default function CreateEventModal() {
 			postalCode: "",
 			latitude: "",
 			longitude: "",
-			ticketName: "",
-			ticketPrice: "",
-			ticketQuantity: "",
-			salesStartDate: "",
-			salesEndDate: ""
+			ticketTypes: [],
 		}
 	});
 
@@ -213,32 +236,41 @@ export default function CreateEventModal() {
 			
 			console.log('Event created successfully:', event.id);
 
-			// Create ticket type
-			if (data.ticketName && data.ticketPrice && data.ticketQuantity) {
-				// Generate a unique ID for the ticket type
-				const ticketTypeId = uuidv4();
-				console.log('Generated ticket type ID:', ticketTypeId);
+			// Create ticket types if any are configured
+			if (ticketTypes.length > 0 && ticketTypes.some(t => t.name && t.price && t.quantity)) {
+				console.log('Creating ticket types for event:', event.id);
 				
-				const { error: ticketError } = await supabase
-					.from('ticket_types')
-					.insert({
-						id: ticketTypeId,  // Add the generated ID
-						name: data.ticketName,
-						price: parseFloat(data.ticketPrice),
-						quantity: parseInt(data.ticketQuantity),
-						availableQuantity: parseInt(data.ticketQuantity),
-						salesStartDate: new Date(data.salesStartDate!).toISOString(),
-						salesEndDate: new Date(data.salesEndDate!).toISOString(),
-						eventId: event.id,
-						updatedAt: new Date().toISOString() 
-					});
+				const ticketTypePromises = ticketTypes.map(async (ticketData) => {
+					if (ticketData.name && ticketData.price && ticketData.quantity) {
+						const ticketTypeId = uuidv4();
+						console.log(`Creating ticket type: ${ticketData.name}`, ticketTypeId);
+						
+						const { error: ticketError } = await supabase
+							.from('ticket_types')
+							.insert({
+								id: ticketTypeId,
+								name: ticketData.name,
+								price: parseFloat(ticketData.price),
+								quantity: parseInt(ticketData.quantity),
+								availableQuantity: parseInt(ticketData.quantity),
+								eventId: event.id,
+								salesStartDate: ticketData.salesStartDate ? new Date(ticketData.salesStartDate).toISOString() : new Date().toISOString(),
+								salesEndDate: ticketData.salesEndDate ? new Date(ticketData.salesEndDate).toISOString() : data.endTime,
+								updatedAt: new Date().toISOString()
+							});
 
-				if (ticketError) {
-					console.error('Ticket type creation error:', ticketError);
-					throw new Error(`Ticket type creation failed: ${ticketError.message}`);
-				}
-				
-				console.log('Ticket type created successfully:', ticketTypeId);
+						if (ticketError) {
+							console.error(`Ticket type creation error for ${ticketData.name}:`, ticketError);
+							throw new Error(`Ticket type creation failed for ${ticketData.name}: ${ticketError.message}`);
+						}
+						
+						console.log(`Ticket type created successfully: ${ticketData.name}`, ticketTypeId);
+						return ticketTypeId;
+					}
+				});
+
+				await Promise.all(ticketTypePromises);
+				console.log('All ticket types created successfully');
 			}
 
 			// Create category associations
@@ -267,6 +299,13 @@ export default function CreateEventModal() {
 			closeModal();
 			form.reset();
 			setUploadedImageUrl(null);
+			setTicketTypes([{
+				name: "",
+				price: "",
+				quantity: "",
+				salesStartDate: "",
+				salesEndDate: ""
+			}]);
 			
 			// Redirect to events page and refresh to show the new event
 			router.push('/dashboard/events');
@@ -354,23 +393,23 @@ export default function CreateEventModal() {
 								)}
 							/>
 							
-							<FormField
-								control={form.control}
-								name="categories"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Categories *</FormLabel>
-										<FormControl>
-											<CategorySelector
-												selectedCategories={field.value}
-												onCategoriesChange={field.onChange}
-												placeholder="Select event categories..."
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+															<FormField
+									control={form.control}
+									name="categories"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Categories *</FormLabel>
+											<FormControl>
+												<CategorySelector
+													selectedCategories={field.value}
+													onCategoriesChange={field.onChange}
+													placeholder="Select event categories..."
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 							
 							{/* Event Status */}
 							<FormField
@@ -543,93 +582,103 @@ export default function CreateEventModal() {
 							</div>
 						</div>
 
-						{/* Ticket Type */}
+						{/* Ticket Types */}
 						<div className="space-y-4">
-							<h3 className="text-lg font-medium">Ticket Type (Optional)</h3>
-							<div className="grid gap-4 md:grid-cols-2">
-								<FormField
-									control={form.control}
-									name="ticketName"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Ticket Name</FormLabel>
-											<FormControl>
-												<Input 
+							<div className="flex items-center justify-between">
+								<h3 className="text-lg font-medium">Ticket Types</h3>
+								<Button 
+									type="button" 
+									variant="outline" 
+									size="sm"
+									onClick={addTicketType}
+								>
+									<Plus className="h-4 w-4 mr-2" />
+									Add Ticket
+								</Button>
+							</div>
+							
+							<div className="space-y-4">
+								{ticketTypes.map((ticket, index) => (
+									<div key={index} className="p-4 border rounded-lg space-y-4">
+										<div className="flex items-center justify-between">
+											<h4 className="font-medium text-sm text-muted-foreground">
+												Ticket Type {index + 1}
+											</h4>
+											{ticketTypes.length > 1 && (
+												<Button
+													type="button"
+													variant="ghost"
+													size="sm"
+													onClick={() => removeTicketType(index)}
+													className="text-destructive hover:text-destructive"
+												>
+													<X className="h-4 w-4" />
+												</Button>
+											)}
+										</div>
+										
+										<div className="grid gap-4 md:grid-cols-3">
+											<div>
+												<Label className="text-sm">Ticket Name</Label>
+												<Input
 													placeholder="e.g., General Admission"
-													{...field}
+													value={ticket.name}
+													onChange={(e) => updateTicketType(index, 'name', e.target.value)}
 												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={form.control}
-									name="ticketPrice"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Ticket Price</FormLabel>
-											<FormControl>
-												<Input 
+											</div>
+											<div>
+												<Label className="text-sm">Price</Label>
+												<Input
 													type="number"
 													step="0.01"
 													placeholder="0.00"
-													{...field}
+													value={ticket.price}
+													onChange={(e) => updateTicketType(index, 'price', e.target.value)}
 												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={form.control}
-									name="ticketQuantity"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Available Quantity</FormLabel>
-											<FormControl>
-												<Input 
+											</div>
+											<div>
+												<Label className="text-sm">Quantity</Label>
+												<Input
 													type="number"
 													placeholder="Enter quantity"
-													{...field}
+													value={ticket.quantity}
+													onChange={(e) => updateTicketType(index, 'quantity', e.target.value)}
 												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={form.control}
-									name="salesStartDate"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Sales Start Date</FormLabel>
-											<FormControl>
-												<Input 
+											</div>
+										</div>
+										
+										<div className="grid gap-4 md:grid-cols-2">
+											<div>
+												<Label className="text-sm">Sales Start Date</Label>
+												<Input
 													type="datetime-local"
-													{...field}
+													value={ticket.salesStartDate}
+													onChange={(e) => updateTicketType(index, 'salesStartDate', e.target.value)}
 												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={form.control}
-									name="salesEndDate"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Sales End Date</FormLabel>
-											<FormControl>
-												<Input 
+											</div>
+											<div>
+												<Label className="text-sm">Sales End Date</Label>
+												<Input
 													type="datetime-local"
-													{...field}
+													value={ticket.salesEndDate}
+													onChange={(e) => updateTicketType(index, 'salesEndDate', e.target.value)}
 												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
+											</div>
+										</div>
+									</div>
+								))}
+							</div>
+							
+							{/* Optional: Configure Later Button */}
+							<div className="text-center pt-2">
+								<Button 
+									type="button" 
+									variant="ghost" 
+									size="sm"
+									onClick={() => setTicketTypes([])}
+								>
+									Skip tickets for now
+								</Button>
 							</div>
 						</div>
 
