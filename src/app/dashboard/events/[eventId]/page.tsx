@@ -5,12 +5,23 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Clock, Users, Calendar, DollarSign, TrendingUp, BarChart3 } from "lucide-react";
+import { MapPin, Clock, Users, Calendar, DollarSign, TrendingUp, BarChart3, Trash2 } from "lucide-react";
 import { fetchEventById, Event } from "@/lib/event-query";
 import Link from "next/link";
 import EventStatusDisplay from "@/components/event/EventStatusDisplay";
 import EventEditModal from "@/components/event/EventEditModal";
 import TicketManagement from "@/components/event/TicketManagement";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function DashboardEventDetailPage() {
 	const params = useParams();
@@ -23,6 +34,7 @@ export default function DashboardEventDetailPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState("main-dashboard");
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	useEffect(() => {
 		const loadEvent = async () => {
@@ -50,6 +62,31 @@ export default function DashboardEventDetailPage() {
 	const handleEventUpdated = () => {
 		// Refresh the event data
 		window.location.reload();
+	};
+
+	const handleDeleteEvent = async () => {
+		if (!event) return;
+		
+		try {
+			setIsDeleting(true);
+			
+			const response = await fetch(`/api/events/${event.id}`, {
+				method: 'DELETE',
+			});
+			
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || 'Failed to delete event');
+			}
+			
+			// Redirect to events list after successful deletion
+			router.push('/dashboard/events');
+		} catch (error) {
+			console.error('Error deleting event:', error);
+			alert(`Failed to delete event: ${error instanceof Error ? error.message : 'Unknown error'}`);
+		} finally {
+			setIsDeleting(false);
+		}
 	};
 
 	const refreshEventData = async () => {
@@ -137,14 +174,53 @@ export default function DashboardEventDetailPage() {
 							<h1 className="text-3xl font-bold text-gray-900">{event.title}</h1>
 							<p className="text-gray-600 mt-1">Event Management Dashboard</p>
 						</div>
-						<Button 
-							variant="outline" 
-							size="sm" 
-							onClick={refreshEventData}
-							disabled={loading || ticketRefreshing}
-						>
-							{loading || ticketRefreshing ? 'Refreshing...' : 'Refresh Data'}
-						</Button>
+						<div className="flex items-center space-x-3">
+							<Button 
+								variant="outline" 
+								size="sm" 
+								onClick={refreshEventData}
+								disabled={loading || ticketRefreshing}
+							>
+								{loading || ticketRefreshing ? 'Refreshing...' : 'Refresh Data'}
+							</Button>
+							
+							<AlertDialog>
+								<AlertDialogTrigger asChild>
+									<Button 
+										variant="destructive" 
+										size="sm"
+										disabled={isDeleting}
+									>
+										<Trash2 className="h-4 w-4 mr-2" />
+										{isDeleting ? 'Deleting...' : 'Delete Event'}
+									</Button>
+								</AlertDialogTrigger>
+								<AlertDialogContent>
+									<AlertDialogHeader>
+										<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+										<AlertDialogDescription>
+											This action cannot be undone. This will permanently delete the event
+											&quot;{event.title}&quot; and all associated data including:
+											<ul className="list-disc list-inside mt-2 space-y-1">
+												<li>Event details and settings</li>
+												<li>All ticket types and configurations</li>
+												<li>Booking records and attendee data</li>
+												<li>Financial records and analytics</li>
+											</ul>
+										</AlertDialogDescription>
+									</AlertDialogHeader>
+									<AlertDialogFooter>
+										<AlertDialogCancel>Cancel</AlertDialogCancel>
+										<AlertDialogAction 
+											onClick={handleDeleteEvent}
+											className="bg-destructive text-white hover:bg-destructive/90"
+										>
+											Yes, delete event
+										</AlertDialogAction>
+									</AlertDialogFooter>
+								</AlertDialogContent>
+							</AlertDialog>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -239,13 +315,64 @@ export default function DashboardEventDetailPage() {
 								</CardHeader>
 								<CardContent className="space-y-4">
 									<div className="grid grid-cols-2 gap-4">
-										<div className="text-center p-4 bg-muted/30 rounded-lg">
-											<p className="text-2xl font-bold text-primary">0</p>
-											<p className="text-sm text-gray-600">Registrations</p>
+										<div className="p-4 border rounded-lg">
+											<div className="flex items-center justify-between">
+												<div>
+													<p className="text-sm font-medium text-gray-600">Total Registrations</p>
+													<p className="text-2xl font-bold text-primary">
+														{event.ticket_types ? 
+															event.ticket_types.reduce((total, ticket) => total + (ticket.quantity - ticket.availableQuantity), 0) 
+															: 0
+														}
+													</p>
+												</div>
+												<Users className="h-8 w-8 text-primary/60" />
+											</div>
 										</div>
-										<div className="text-center p-4 bg-muted/30 rounded-lg">
-											<p className="text-2xl font-bold text-green-600">₱0</p>
-											<p className="text-sm text-gray-600">Revenue</p>
+										
+										<div className="p-4 border rounded-lg">
+											<div className="flex items-center justify-between">
+												<div>
+													<p className="text-sm font-medium text-gray-600">Total Revenue</p>
+													<p className="text-2xl font-bold text-green-600">
+														₱{event.ticket_types ? 
+															event.ticket_types.reduce((total, ticket) => {
+																const soldQuantity = ticket.quantity - ticket.availableQuantity;
+																return total + (soldQuantity * ticket.price);
+															}, 0).toLocaleString()
+															: '0'
+														}
+													</p>
+												</div>
+												<DollarSign className="h-8 w-8 text-green-600/60" />
+											</div>
+										</div>
+										
+										<div className="p-4 border rounded-lg">
+											<div className="flex items-center justify-between">
+												<div>
+													<p className="text-sm font-medium text-gray-600">Available Tickets</p>
+													<p className="text-2xl font-bold text-blue-600">
+														{event.ticket_types ? 
+															event.ticket_types.reduce((total, ticket) => total + ticket.availableQuantity, 0) 
+															: 0
+														}
+													</p>
+												</div>
+												<TrendingUp className="h-8 w-8 text-blue-600/60" />
+											</div>
+										</div>
+										
+										<div className="p-4 border rounded-lg">
+											<div className="flex items-center justify-between">
+												<div>
+													<p className="text-sm font-medium text-gray-600">Ticket Types</p>
+													<p className="text-2xl font-bold text-purple-600">
+														{event.ticket_types ? event.ticket_types.length : 0}
+													</p>
+												</div>
+												<Calendar className="h-8 w-8 text-purple-600/60" />
+											</div>
 										</div>
 									</div>
 								</CardContent>

@@ -128,7 +128,7 @@ export default function BookingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="min-h-screen bg-muted/40 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-muted rounded w-1/4"></div>
@@ -145,7 +145,7 @@ export default function BookingsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="min-h-screen bg-muted/40 p-6">
         <div className="max-w-4xl mx-auto text-center">
           <div className="text-red-600 mb-4">{error}</div>
           <Button asChild>
@@ -157,7 +157,7 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-muted/40 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">

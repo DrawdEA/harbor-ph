@@ -21,18 +21,18 @@ export interface FeedFilters {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'ALL', label: 'All Statuses' },
-  { value: 'ACTIVE', label: 'Active (Accepting Registrations)' },
-  { value: 'LIVE', label: 'Live (Happening Now)' },
+  { value: 'ALL', label: 'All' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'LIVE', label: 'Live' },
   { value: 'COMPLETED', label: 'Completed' }
 ];
 
 const DATE_OPTIONS = [
-  { value: 'ALL', label: 'All Dates' },
+  { value: 'ALL', label: 'All' },
   { value: 'TODAY', label: 'Today' },
   { value: 'TOMORROW', label: 'Tomorrow' },
-  { value: 'THIS_WEEK', label: 'This Week' },
-  { value: 'THIS_MONTH', label: 'This Month' },
+  { value: 'THIS_WEEK', label: 'Week' },
+  { value: 'THIS_MONTH', label: 'Month' },
   { value: 'UPCOMING', label: 'Upcoming' }
 ];
 
@@ -80,26 +80,24 @@ export default function FeedFilters({ onFiltersChange }: FeedFiltersProps) {
 
   return (
     <Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border p-0 shadow-sm">
-      <CardHeader className="px-6 pt-6">
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="px-4 pt-4 pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Filter className="h-4 w-4" />
           Filters
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="p-6 pt-0">
-        
-
-
-        {/* Status Filter Section */}
-        <div className="space-y-4">
+      <CardContent className="p-4 pt-0 space-y-4">
+        {/* Status Filter Section - Horizontal */}
+        <div className="space-y-2">
           <Label className="font-semibold text-sm text-muted-foreground">Status</Label>
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {STATUS_OPTIONS.map((option) => (
               <Button
                 key={option.value}
                 variant={filters.status === option.value ? 'default' : 'secondary'}
-                className="w-full justify-start"
+                size="sm"
+                className="text-xs h-8"
                 onClick={() => handleFilterChange('status', option.value)}
               >
                 {option.label}
@@ -108,59 +106,55 @@ export default function FeedFilters({ onFiltersChange }: FeedFiltersProps) {
           </div>
         </div>
 
-        <Separator className="my-6" />
-
-        {/* Date Range Filter Section */}
-        <div className="space-y-4">
+        {/* Date Range Filter Section - Horizontal */}
+        <div className="space-y-2">
           <Label className="font-semibold text-sm text-muted-foreground">Date Range</Label>
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {DATE_OPTIONS.map((option) => (
               <Button
                 key={option.value}
                 variant={filters.dateRange === option.value ? 'default' : 'secondary'}
-                className="w-full justify-start"
+                size="sm"
+                className="text-xs h-8"
                 onClick={() => handleFilterChange('dateRange', option.value)}
               >
-                <Calendar className="h-4 w-4 mr-2" />
                 {option.label}
               </Button>
             ))}
           </div>
         </div>
 
-        <Separator className="my-6" />
-
         {/* Category Filter Section */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           <Label htmlFor="category" className="font-semibold text-sm text-muted-foreground">Category</Label>
           <Input
             id="category"
             placeholder="Enter category..."
             value={filters.category}
             onChange={(e) => handleFilterChange('category', e.target.value)}
+            className="h-8 text-sm"
           />
         </div>
 
-        <Separator className="my-6" />
-
         {/* Location Filter Section */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           <Label htmlFor="location" className="font-semibold text-sm text-muted-foreground">Location</Label>
           <Input
             id="location"
             placeholder="City, province, or venue..."
             value={filters.location}
             onChange={(e) => handleFilterChange('location', e.target.value)}
+            className="h-8 text-sm"
           />
         </div>
 
         {/* Action Buttons */}
-        <div className="space-y-3 pt-4">
-          <Button onClick={handleApplyFilters} className="w-full">
+        <div className="space-y-2 pt-2">
+          <Button onClick={handleApplyFilters} size="sm" className="w-full h-8">
             Apply Filters
           </Button>
           {hasActiveFilters && (
-            <Button onClick={clearFilters} variant="outline" className="w-full">
+            <Button onClick={clearFilters} variant="outline" size="sm" className="w-full h-8">
               Clear Filters
             </Button>
           )}

@@ -52,15 +52,7 @@ const Profile = ({ profile }: { profile: Profile }) => {
         <Button className="w-full shadow-md hover:shadow-lg transition-shadow duration-300" variant="secondary">View Profile</Button>
       </Link>
       
-      {/* Navigation Links for Regular Users */}
-      <div className="mt-4 space-y-2">
-        <Link href="/events" className="block">
-          <Button variant="outline" className="w-full text-sm">Browse Events</Button>
-        </Link>
-        <Link href="/bookings" className="block">
-          <Button variant="outline" className="w-full text-sm">My Bookings</Button>
-        </Link>
-      </div>
+      {/* Navigation Links for Regular Users - REMOVED (redundant) */}
     </>
   )
 }

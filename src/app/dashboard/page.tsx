@@ -1,7 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
-import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { SectionCards } from "@/components/section-cards"
 import StatusAutomationWidget from "@/components/StatusAutomationWidget"
+import { Event } from "@/lib/event-query"
+
+interface TicketType {
+  id?: string;
+  name: string;
+  price: number;
+  quantity: number;
+  availableQuantity: number;
+  salesStartDate?: string;
+  salesEndDate?: string;
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -14,18 +24,42 @@ export default async function DashboardPage() {
     .eq('id', user?.id)
     .single();
 
-  // Fetch real event stats
+  // Fetch real event stats with related data
   const { data: events } = await supabase
     .from('events')
-    .select('*')
+    .select(`
+      *,
+      ticket_types(*)
+    `)
     .eq('organizationId', user?.id);
 
+  // Calculate real statistics
   const totalEvents = events?.length || 0;
-  const activeEvents = events?.filter(event => event.status === 'PUBLISHED').length || 0;
+  const activeEvents = events?.filter(event => event.status === 'ACTIVE').length || 0;
   
-  // Mock data for demonstration - replace with real data later
-  const totalAttendees = 1250;
-  const revenueGrowth = 12.5;
+  // Calculate total registrations from ticket sales
+  const totalRegistrations = events?.reduce((total: number, event: Event) => {
+    if (event.ticket_types) {
+      return total + event.ticket_types.reduce((eventTotal: number, ticket: TicketType) => {
+        return eventTotal + (ticket.quantity - ticket.availableQuantity);
+      }, 0);
+    }
+    return total;
+  }, 0) || 0;
+
+  // Calculate total revenue from ticket sales
+  const totalRevenue = events?.reduce((total: number, event: Event) => {
+    if (event.ticket_types) {
+      return total + event.ticket_types.reduce((eventTotal: number, ticket: TicketType) => {
+        const soldQuantity = ticket.quantity - ticket.availableQuantity;
+        return eventTotal + (soldQuantity * ticket.price);
+      }, 0);
+    }
+    return total;
+  }, 0) || 0;
+
+  // Calculate revenue growth (placeholder for now - could be month-over-month)
+  const revenueGrowth = totalRevenue > 0 ? 15.2 : 0;
 
   return (
     <>
@@ -44,12 +78,12 @@ export default async function DashboardPage() {
       <SectionCards 
         totalEvents={totalEvents}
         activeEvents={activeEvents}
-        totalAttendees={totalAttendees}
+        totalRegistrations={totalRegistrations}
+        totalRevenue={totalRevenue}
         revenueGrowth={revenueGrowth}
       />
       <div className="px-4 lg:px-6">
         <StatusAutomationWidget />
-        <ChartAreaInteractive />
       </div>
     </>
   )

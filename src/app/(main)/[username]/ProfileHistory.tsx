@@ -61,27 +61,46 @@ export default function ProfileHistory({ userId }: ProfileHistoryProps) {
             )
           `)
           .eq('userId', userId)
-          .eq('status', 'CONFIRMED')
-          .lt('event.startTime', new Date().toISOString())
-          .order('event.startTime', { ascending: false });
+          .eq('status', 'CONFIRMED');
 
         if (eventsError) {
+          console.error('Supabase error:', eventsError);
           throw new Error(eventsError.message);
         }
 
-        // Transform the data to match our interface
-        const transformedEvents = eventsData?.map(booking => ({
-          id: booking.event.id,
-          title: booking.event.title,
-          description: booking.event.description,
-          startTime: booking.event.startTime,
-          endTime: booking.event.endTime,
-          imageUrl: booking.event.imageUrl,
-          venues: booking.event.venues,
-          status: booking.status,
-          role: 'Attendee'
-        })) || [];
+        console.log('Raw events data:', eventsData);
+        console.log('User ID:', userId);
+        const now = new Date();
+        console.log('Current time:', now);
+        
+        // Filter past events after fetching (since we can't filter nested fields directly)
+        const transformedEvents = eventsData
+          ?.filter(booking => {
+            // Add safety checks for missing data
+            if (!booking.event || !booking.event.startTime) {
+              console.warn('Invalid booking data:', booking);
+              return false;
+            }
+            
+            const eventTime = new Date(booking.event.startTime);
+            const isPast = eventTime < now;
+            console.log(`Event: ${booking.event.title}, Time: ${eventTime}, Is Past: ${isPast}`);
+            return isPast;
+          })
+          ?.map(booking => ({
+            id: booking.event.id,
+            title: booking.event.title,
+            description: booking.event.description,
+            startTime: booking.event.startTime,
+            endTime: booking.event.endTime,
+            imageUrl: booking.event.imageUrl,
+            venues: booking.event.venues,
+            status: booking.status,
+            role: 'Attendee'
+          }))
+          ?.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()) || [];
 
+        console.log('Transformed events:', transformedEvents);
         setPastEvents(transformedEvents);
       } catch (err: any) {
         setError(err.message || 'Failed to fetch event history');

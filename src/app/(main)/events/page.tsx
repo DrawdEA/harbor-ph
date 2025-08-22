@@ -162,7 +162,7 @@ export default function EventsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Enhanced Filters Sidebar - Sticky */}
           <div className="lg:col-span-1">
-            <div className="sticky top-21.5">
+            <div className="sticky top-4">
               <FeedFilters onFiltersChange={setFilters} />
             </div>
           </div>
