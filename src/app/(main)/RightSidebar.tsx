@@ -79,7 +79,7 @@ export default function RightSidebar() {
               className="text-xs h-8"
               onClick={() => handleFilterChange('status', 'ACTIVE')}
             >
-              Active
+              Coming Soon
             </Button>
             <Button
               variant={filters.status === 'LIVE' ? 'default' : 'secondary'}
@@ -95,7 +95,7 @@ export default function RightSidebar() {
               className="text-xs h-8"
               onClick={() => handleFilterChange('status', 'COMPLETED')}
             >
-              Completed
+              Finished
             </Button>
           </div>
         </div>

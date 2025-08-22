@@ -9,6 +9,7 @@ import Link from "next/link";
 import { BackButton } from "@/components/ui/back-button";
 import Image from "next/image";
 import EventRegistrationModal from "@/components/event/EventRegistrationModal";
+import EventStatusBadge from "@/components/event/EventStatusBadge";
 
 export default function EventDetailPage() {
 	const params = useParams();
@@ -141,34 +142,10 @@ export default function EventDetailPage() {
 									{event.description}
 								</p>
 								
-								{/* Categories */}
-								{event.categories_on_events && event.categories_on_events.length > 0 && (
-									<div className="mt-4">
-										<div className="flex flex-wrap gap-2">
-											{event.categories_on_events.map((catRelation) => 
-												catRelation.categories && (
-													<span
-														key={catRelation.categories.id}
-														className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
-													>
-														{catRelation.categories.name}
-													</span>
-												)
-											)}
-										</div>
-									</div>
-								)}
-							</div>
-
-							{/* Status Badge */}
-							<div>
-								<span className={`px-4 py-2 text-sm rounded-full font-medium ${
-									event.status === 'PUBLISHED' 
-										? 'bg-green-100 text-green-800' 
-										: 'bg-yellow-100 text-yellow-800'
-								}`}>
-									{event.status}
-								</span>
+								{/* Status Badge */}
+								<div className="mt-4">
+									<EventStatusBadge status={event.status} />
+								</div>
 							</div>
 
 							{/* Date & Time */}

@@ -9,6 +9,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Building2, Mail, Shield, Trash2 } from "lucide-react";
 import ProfilePictureUpload from "@/components/shared/ProfilePictureUpload";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation";
 
 interface OrganizationProfile {
 	id: string;
@@ -25,6 +37,8 @@ interface OrganizationProfile {
 export default function SettingsPage() {
 	const [orgProfile, setOrgProfile] = useState<OrganizationProfile | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const router = useRouter();
 
 	useEffect(() => {
 		async function fetchOrgProfile() {
@@ -57,6 +71,45 @@ export default function SettingsPage() {
 			...prev,
 			profilePictureUrl: newUrl
 		} : null);
+	};
+
+	const handleDeleteAccount = async () => {
+		if (!orgProfile) return;
+		
+		try {
+			setIsDeleting(true);
+			const supabase = createClient();
+			
+			// Delete organization profile first
+			const { error: profileError } = await supabase
+				.from('organization_profiles')
+				.delete()
+				.eq('id', orgProfile.id);
+			
+			if (profileError) {
+				console.error('Error deleting organization profile:', profileError);
+				throw new Error('Failed to delete organization profile');
+			}
+			
+			// Delete the user account
+			const { error: userError } = await supabase.auth.admin.deleteUser(orgProfile.id);
+			
+			if (userError) {
+				console.error('Error deleting user:', userError);
+				// If we can't delete the user, at least we deleted the profile
+				// User will need to contact support
+			}
+			
+			// Sign out and redirect to login
+			await supabase.auth.signOut();
+			router.push('/auth/login');
+			
+		} catch (error) {
+			console.error('Error deleting organization account:', error);
+			alert('Failed to delete organization account. Please try again or contact support.');
+		} finally {
+			setIsDeleting(false);
+		}
 	};
 
 	if (isLoading) {
@@ -241,9 +294,39 @@ export default function SettingsPage() {
 								Once you delete your organization account, there is no going back. 
 								This will permanently delete all your events, data, and remove your organization from the platform.
 							</p>
-							<Button variant="destructive">
-								Delete Organization Account
-							</Button>
+							<AlertDialog>
+								<AlertDialogTrigger asChild>
+									<Button variant="destructive" className="flex items-center gap-2">
+										<Trash2 className="w-4 h-4" />
+										Delete Organization Account
+									</Button>
+								</AlertDialogTrigger>
+								<AlertDialogContent>
+									<AlertDialogHeader>
+										<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+										<AlertDialogDescription>
+											This action cannot be undone. This will permanently delete your organization account and remove all associated data including:
+											<ul className="list-disc list-inside mt-2 space-y-1">
+												<li>Organization profile and settings</li>
+												<li>All events and event data</li>
+												<li>Ticket types and configurations</li>
+												<li>Booking records and attendee data</li>
+												<li>Financial records and analytics</li>
+											</ul>
+										</AlertDialogDescription>
+									</AlertDialogHeader>
+									<AlertDialogFooter>
+										<AlertDialogCancel>Cancel</AlertDialogCancel>
+										<AlertDialogAction 
+											onClick={handleDeleteAccount}
+											className="bg-destructive text-white hover:bg-destructive/90"
+											disabled={isDeleting}
+										>
+											{isDeleting ? 'Deleting...' : 'Delete Organization Account'}
+										</AlertDialogAction>
+									</AlertDialogFooter>
+								</AlertDialogContent>
+							</AlertDialog>
 						</div>
 					</CardContent>
 				</Card>

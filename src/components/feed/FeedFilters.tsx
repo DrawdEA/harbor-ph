@@ -22,9 +22,9 @@ export interface FeedFilters {
 
 const STATUS_OPTIONS = [
   { value: 'ALL', label: 'All' },
-  { value: 'ACTIVE', label: 'Active' },
+  { value: 'ACTIVE', label: 'Coming Soon' },
   { value: 'LIVE', label: 'Live' },
-  { value: 'COMPLETED', label: 'Completed' }
+  { value: 'COMPLETED', label: 'Finished' }
 ];
 
 const DATE_OPTIONS = [

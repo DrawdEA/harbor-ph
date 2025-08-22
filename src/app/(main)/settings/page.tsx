@@ -3,17 +3,31 @@
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, User, Shield, Bell, Key } from "lucide-react";
+import { Edit, User, Shield, Bell, Key, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { UserProfile } from "@/types";
 import EditProfileForm from "./EditProfileForm";
 import ProfilePictureUpload from "./ProfilePictureUpload";
 import Link from "next/link";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
 
   const fetchProfile = async () => {
     const supabase = createClient();
@@ -66,6 +80,45 @@ export default function SettingsPage() {
     }
     // Refresh the header to show updated profile picture
     refreshHeader();
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!profile) return;
+    
+    try {
+      setIsDeleting(true);
+      const supabase = createClient();
+      
+      // Delete user profile first
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', profile.id);
+      
+      if (profileError) {
+        console.error('Error deleting profile:', profileError);
+        throw new Error('Failed to delete profile');
+      }
+      
+      // Delete the user account
+      const { error: userError } = await supabase.auth.admin.deleteUser(profile.id);
+      
+      if (userError) {
+        console.error('Error deleting user:', userError);
+        // If we can't delete the user, at least we deleted the profile
+        // User will need to contact support
+      }
+      
+      // Sign out and redirect to login
+      await supabase.auth.signOut();
+      router.push('/auth/login');
+      
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      alert('Failed to delete account. Please try again or contact support.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (isLoading) {
@@ -268,6 +321,47 @@ export default function SettingsPage() {
                   </Button>
                 </Link>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Delete Account Section */}
+          <Card className="font-roboto border-muted bg-background flex w-full flex-col overflow-hidden rounded-md border shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-red-500" />
+                Delete Account
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Once you delete your account, there is no going back. Please be certain.
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="flex items-center gap-2">
+                    <Trash2 className="w-4 h-4" />
+                    Delete Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleDeleteAccount}
+                      className="bg-destructive text-white hover:bg-destructive/90"
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? 'Deleting...' : 'Delete Account'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardContent>
           </Card>
         </div>
