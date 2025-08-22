@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, User, Search, Settings, LogOut, Crown, Bell, Building2 } from "lucide-react";
+import { Home, User, Search, Settings, LogOut, Crown, Bookmark, Building2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -90,7 +90,7 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 		if (!isOrganization) {
 			profileMenuItems = [
 				{ label: "View Profile", icon: User, href: `/${metadata.username}` },
-				{ label: "My Bookings", icon: Bell, href: "/bookings" },
+				{ label: "My Bookings", icon: Bookmark, href: "/bookings" },
 				{ label: "Premium", icon: Crown, href: "/coming-soon" },
 				{ label: "Settings", icon: Settings, href: "/settings" },
 			];
@@ -229,8 +229,15 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 									</Button>
 								</Link>
 							) : (
-								// Personal users see profile sheet
-								<ProfileSheet />
+								// Personal users see bookmarks and profile
+								<>
+									<Link href="/bookmarks" className="text-foreground hover:text-primary relative">
+										<Bookmark size={22} />
+										{/* Optional: Add bookmark badge */}
+										<span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
+									</Link>
+									<ProfileDropdown />
+								</>
 							)
 						) : (
 							// Unauthenticated users - show nothing extra in mobile
@@ -329,9 +336,9 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 							) : (
 								// Personal users see notifications and profile
 								<>
-									<Link href="/notifications" className="text-foreground hover:text-primary relative">
-										<Bell size={22} />
-										{/* Optional: Add notification badge */}
+									<Link href="/bookmarks" className="text-foreground hover:text-primary relative">
+										<Bookmark size={22} />
+										{/* Optional: Add bookmark badge */}
 										<span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
 									</Link>
 									<ProfileDropdown />
@@ -356,11 +363,11 @@ export function HeaderLayout({ user: initialUser }: HeaderLayoutProps) {
 					<span className="text-xs">Home</span>
 				</Link>
 				<Link
-					href="/notifications"
+					href="/bookmarks"
 					className="text-foreground hover:text-primary flex flex-col items-center"
 				>
-					<Bell size={22} />
-					<span className="text-xs">Notifications</span>
+					<Bookmark size={22} />
+					<span className="text-xs">Bookmarks</span>
 				</Link>
 			</nav>
 		</>
