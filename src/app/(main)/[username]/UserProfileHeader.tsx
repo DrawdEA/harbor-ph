@@ -10,14 +10,11 @@ import { useRouter } from "next/navigation";
 
 interface UserProfileHeaderProps {
   profile: UserProfile;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
 }
 
-export default function UserProfileHeader({ profile, activeTab, setActiveTab }: UserProfileHeaderProps) {
+export default function UserProfileHeader({ profile }: UserProfileHeaderProps) {
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const router = useRouter();
-  const tabs = ["Home", "Bookings", "Attended"];
 
   // Get current user on component mount
   useEffect(() => {
@@ -76,7 +73,7 @@ export default function UserProfileHeader({ profile, activeTab, setActiveTab }: 
           {/* Only show plus button if it's not the user's own profile */}
           {!isOwnProfile && (
             <div className="absolute bottom-0 right-0 w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-full border-4 border-background flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors">
-              <Plus className="w-4 h-4 sm:w-6 sm:h-6 text-primary-foreground" />
+              <Plus className="w-4 h-4 sm:w-6 sm:w-6 text-primary-foreground" />
             </div>
           )}
         </div>
@@ -116,27 +113,6 @@ export default function UserProfileHeader({ profile, activeTab, setActiveTab }: 
                   <span className="ml-1 text-xs sm:text-sm text-muted-foreground">Followers</span>
               </div>
             </div>
-        </div>
-      </div>
-
-      {/* --- TABS NAVIGATION --- */}
-      <div className="w-full mt-4 sm:mt-6 md:mt-8 border-b border-border">
-        <div className="flex items-center justify-center md:justify-start -mb-px">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-sm sm:text-base font-semibold transition-colors duration-200
-                ${
-                  activeTab === tab
-                    ? "border-b-2 border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-primary"
-                }
-              `}
-            >
-              {tab}
-            </button>
-          ))}
         </div>
       </div>
     </div>

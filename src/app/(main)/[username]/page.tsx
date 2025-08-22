@@ -3,9 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 
 // Import your components (paths may need slight adjustment if you moved them)
 import UserProfileShell from "./UserProfileShell";
-import UserProfileHeader from "./UserProfileHeader";
 import Home from "./Home";
-import Portfolio from "./Portfolio";
+import ProfileHistory from "./ProfileHistory";
 import ProfileBookings from "./ProfileBookings";
 
 // ✨ CHANGE 1: The function now receives a `params` object from Next.js
@@ -30,9 +29,9 @@ export default async function DynamicProfilePage({ params }: DynamicProfilePageP
 	
 	return (
 		<UserProfileShell
-			header={<UserProfileHeader profile={profile} />} 
+			profile={profile}
 			homeContent={<Home />}
-			portfolioContent={<Portfolio profile={profile} />}
+			historyContent={<ProfileHistory userId={profile.id} />}
 			bookingsContent={<ProfileBookings userId={profile.id} />}
 		/>
 	);

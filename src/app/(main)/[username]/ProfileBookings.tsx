@@ -2,18 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, QrCode, Download, ExternalLink } from "lucide-react";
-import Link from "next/link";
+import { Calendar, MapPin, Users, QrCode, Ticket } from "lucide-react";
 
 interface Booking {
   id: string;
-  totalPrice: number;
   status: string;
   createdAt: string;
-  paymentMethod: string;
   event: {
     id: string;
     title: string;
@@ -27,11 +23,9 @@ interface Booking {
   };
   tickets: Array<{
     id: string;
-    qrCodeValue: string;
     status: string;
     ticketType: {
       name: string;
-      price: number;
     };
   }>;
 }
@@ -54,7 +48,9 @@ export default function ProfileBookings({ userId }: ProfileBookingsProps) {
         const { data: bookingsData, error: bookingsError } = await supabase
           .from('bookings')
           .select(`
-            *,
+            id,
+            status,
+            createdAt,
             event:events(
               id,
               title,
@@ -68,11 +64,9 @@ export default function ProfileBookings({ userId }: ProfileBookingsProps) {
             ),
             tickets(
               id,
-              qrCodeValue,
               status,
               ticketType:ticket_types(
-                name,
-                price
+                name
               )
             )
           `)
@@ -146,8 +140,7 @@ export default function ProfileBookings({ userId }: ProfileBookingsProps) {
   if (error) {
     return (
       <div className="text-center py-8">
-        <div className="text-red-600 mb-4">{error}</div>
-        <Button onClick={() => window.location.reload()}>Try Again</Button>
+        <div className="text-gray-500">Unable to load event registrations at this time</div>
       </div>
     );
   }
@@ -155,29 +148,18 @@ export default function ProfileBookings({ userId }: ProfileBookingsProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">My Bookings</h2>
-          <p className="text-gray-600 mt-1">View and manage your event registrations</p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/bookings">
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View All Bookings
-          </Link>
-        </Button>
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Event Registrations</h2>
+        <p className="text-gray-600 mt-1">Events this user has registered for</p>
       </div>
 
       {/* Bookings List */}
       {bookings.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No bookings yet</h3>
-            <p className="text-gray-600 mb-4">You haven't registered for any events yet.</p>
-            <Button asChild>
-              <Link href="/events">Browse Events</Link>
-            </Button>
+            <Ticket className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No event registrations yet</h3>
+            <p className="text-gray-600">This user hasn't registered for any events yet.</p>
           </CardContent>
         </Card>
       ) : (
@@ -209,55 +191,22 @@ export default function ProfileBookings({ userId }: ProfileBookingsProps) {
                   )}
                 </div>
 
-                {/* Booking Details */}
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium">Total Paid:</span>
-                    <span className="text-lg font-bold text-green-600">
-                      ₱{booking.totalPrice.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Booked on {formatDate(booking.createdAt)}
-                  </div>
-                </div>
-
-                {/* Tickets */}
-                <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3">Your Tickets ({booking.tickets.length})</h4>
+                {/* Tickets Summary */}
+                <div className="pt-4">
+                  <h4 className="font-medium mb-3">Tickets ({booking.tickets.length})</h4>
                   <div className="space-y-2">
                     {booking.tickets.map((ticket) => (
-                      <div key={ticket.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <QrCode className="h-4 w-4 text-gray-500" />
-                          <div>
-                            <p className="font-medium">{ticket.ticketType.name}</p>
-                            <p className="text-sm text-gray-600">
-                              ₱{ticket.ticketType.price} • {ticket.status}
-                            </p>
-                          </div>
+                      <div key={ticket.id} className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg">
+                        <QrCode className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <p className="font-medium">{ticket.ticketType.name}</p>
+                          <p className="text-sm text-gray-600">
+                            Status: {ticket.status}
+                          </p>
                         </div>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </Button>
                       </div>
                     ))}
                   </div>
-                </div>
-
-                {/* Actions */}
-                <div className="border-t pt-4 flex justify-end space-x-3">
-                  <Button variant="outline" asChild>
-                    <Link href={`/event/${booking.event.id}`}>
-                      View Event
-                    </Link>
-                  </Button>
-                  {booking.status === 'PENDING' && (
-                    <Button variant="outline">
-                      Upload Payment Proof
-                    </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>
